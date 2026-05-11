@@ -11,29 +11,69 @@ interface TimeLog {
 
 export default function TimeTracker() {
   const [isClockedIn, setIsClockedIn] = useState(false)
-  const [todayLogs, setTodayLogs] = useState<TimeLog[]>([])
-  const [totalMinutes, setTotalMinutes] = useState(0)
+  const [clockedInAt, setClockedInAt] = useState<string | null>(null)
+  const [completedSeconds, setCompletedSeconds] = useState(0)
+  const [elapsedSeconds, setElapsedSeconds] = useState(0)
   const [loading, setLoading] = useState(false)
-
-  const minutesToHours = (mins: number) => {
-    const h = Math.floor(mins / 60)
-    const m = mins % 60
-    return `${h}j ${m}m`
-  }
+  const [error, setError] = useState("")
 
   const fetchStatus = useCallback(async () => {
     const res = await fetch("/api/time-tracker")
     const data = await res.json()
     if (res.ok) {
       setIsClockedIn(data.isClockedIn)
-      setTodayLogs(data.todayLogs || [])
-      setTotalMinutes(data.totalDurationMinutes || 0)
+
+      // Compute completed seconds from finished sessions
+      const logs: TimeLog[] = data.todayLogs || []
+      const finished = logs
+        .filter((l: TimeLog) => l.clockOut)
+        .reduce((sum: number, l: TimeLog) => sum + (l.durationMinutes || 0) * 60, 0)
+      setCompletedSeconds(finished)
+
+      if (data.isClockedIn && data.todayLog) {
+        setClockedInAt(data.todayLog.clockIn)
+      } else {
+        setClockedInAt(null)
+        setElapsedSeconds(0)
+      }
     }
   }, [])
 
   useEffect(() => {
     fetchStatus()
   }, [fetchStatus])
+
+  // Real-time stopwatch for current session
+  useEffect(() => {
+    if (!isClockedIn || !clockedInAt) return
+
+    const startedAt = new Date(clockedInAt).getTime()
+    const tick = () => {
+      setElapsedSeconds(Math.floor((Date.now() - startedAt) / 1000))
+    }
+    tick()
+    const interval = setInterval(tick, 1000)
+    return () => clearInterval(interval)
+  }, [isClockedIn, clockedInAt])
+
+  const totalSeconds = completedSeconds + elapsedSeconds
+
+  const formatTime = (totalSec: number) => {
+    const h = Math.floor(totalSec / 3600)
+    const m = Math.floor((totalSec % 3600) / 60)
+    const s = totalSec % 60
+    if (h > 0) {
+      return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`
+    }
+    return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`
+  }
+
+  const formatHuman = (totalSec: number) => {
+    const h = Math.floor(totalSec / 3600)
+    const m = Math.floor((totalSec % 3600) / 60)
+    if (h > 0) return `${h}j ${m}m`
+    return `${m}m`
+  }
 
   async function handleClockIn() {
     setLoading(true)
@@ -49,9 +89,15 @@ export default function TimeTracker() {
 
   async function handleClockOut() {
     setLoading(true)
+    setError("")
     try {
       const res = await fetch("/api/time-tracker/clock-out", { method: "POST" })
-      if (res.ok) await fetchStatus()
+      if (res.ok) {
+        await fetchStatus()
+      } else {
+        const data = await res.json()
+        setError(data.message || "Gagal clock-out")
+      }
     } catch (e) {
       console.error(e)
     } finally {
@@ -59,20 +105,18 @@ export default function TimeTracker() {
     }
   }
 
-  const formatTime = (dateStr: string) => {
-    return new Date(dateStr).toLocaleTimeString("id-ID", {
-      hour: "2-digit",
-      minute: "2-digit",
-    })
-  }
+  const hasWorkedToday = completedSeconds > 0 || isClockedIn
 
   return (
     <div className="space-y-4">
+      {error && (
+        <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+          {error}
+        </div>
+      )}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-zinc-900">
-            Time Tracker
-          </h2>
+          <h2 className="text-lg font-semibold text-zinc-900">Time Tracker</h2>
           <p className="text-sm text-zinc-500">
             {new Date().toLocaleDateString("id-ID", {
               weekday: "long",
@@ -91,68 +135,51 @@ export default function TimeTracker() {
               : "bg-green-600 text-white hover:bg-green-700"
           }`}
         >
-          {loading
-            ? "Memproses..."
-            : isClockedIn
-            ? "Selesai Kerja"
-            : "Mulai Kerja"}
+          {loading ? "Memproses..." : isClockedIn ? "Selesai Kerja" : "Mulai Kerja"}
         </button>
       </div>
 
-      <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
-        <div className="flex items-center gap-3">
-          <div
-            className={`h-3 w-3 rounded-full ${
-              isClockedIn ? "bg-green-500 animate-pulse" : "bg-zinc-400"
-            }`}
-          />
-          <span className="text-sm font-medium text-zinc-700">
-            {isClockedIn ? "Sedang bekerja" : "Belum clock-in"}
-          </span>
-          <span className="ml-auto text-sm font-semibold text-zinc-900">
-            {minutesToHours(totalMinutes)}
-          </span>
-        </div>
-      </div>
-
-      {todayLogs.length > 0 && (
-        <div className="rounded-lg border border-zinc-200">
-          <div className="border-b border-zinc-200 px-4 py-2">
-            <h3 className="text-xs font-semibold uppercase text-zinc-500">
-              Riwayat Hari Ini
-            </h3>
+      {/* Current session stopwatch */}
+      {isClockedIn && (
+        <div className="rounded-lg border border-green-200 bg-green-50 p-5">
+          <div className="flex items-center gap-2">
+            <div className="h-2.5 w-2.5 rounded-full bg-green-500 animate-pulse" />
+            <span className="text-sm font-medium text-green-800">Sedang bekerja</span>
+            <span className="ml-auto font-mono text-2xl font-bold text-green-900 tabular-nums">
+              {formatTime(elapsedSeconds)}
+            </span>
           </div>
-          <div className="divide-y divide-zinc-100">
-            {todayLogs.map((log) => (
-              <div
-                key={log.id}
-                className="flex items-center justify-between px-4 py-3 text-sm"
-              >
-                <div className="flex items-center gap-3">
-                  <span className="text-zinc-600">
-                    {formatTime(log.clockIn)}
-                  </span>
-                  {log.clockOut ? (
-                    <>
-                      <span className="text-zinc-400">—</span>
-                      <span className="text-zinc-600">
-                        {formatTime(log.clockOut)}
-                      </span>
-                    </>
-                  ) : (
-                    <span className="text-xs text-zinc-400">sedang berjalan</span>
-                  )}
-                </div>
-                {log.durationMinutes != null && (
-                  <span className="font-medium text-zinc-700">
-                    {minutesToHours(log.durationMinutes)}
-                  </span>
-                )}
-              </div>
-            ))}
-          </div>
+          <p className="mt-1 text-xs text-green-600">
+            Clock-in sejak{" "}
+            {clockedInAt
+              ? new Date(clockedInAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })
+              : ""}
+          </p>
         </div>
       )}
+
+      {/* Total today */}
+      <div className={`rounded-lg border p-5 ${hasWorkedToday ? "border-zinc-200 bg-white" : "border-zinc-200 bg-zinc-50"}`}>
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-medium text-zinc-600">Total hari ini</span>
+          <span className="font-mono text-xl font-bold text-zinc-900 tabular-nums">
+            {formatTime(totalSeconds)}
+          </span>
+        </div>
+        {isClockedIn && completedSeconds > 0 && (
+          <p className="mt-1 text-xs text-zinc-400">
+            {formatHuman(completedSeconds)} dari sesi sebelumnya + {formatHuman(elapsedSeconds)} sesi ini
+          </p>
+        )}
+        {!isClockedIn && !hasWorkedToday && (
+          <p className="mt-1 text-xs text-zinc-400">Belum ada waktu kerja hari ini</p>
+        )}
+        {!isClockedIn && hasWorkedToday && (
+          <p className="mt-1 text-xs text-zinc-400">
+            Terakhir clock-out: {formatHuman(completedSeconds)} tercatat
+          </p>
+        )}
+      </div>
     </div>
   )
 }

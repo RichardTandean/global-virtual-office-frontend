@@ -1,18 +1,19 @@
 "use client"
 
 import { useState } from "react"
-import { TaskItem } from "@/types/task"
+import { TaskItem, statusLabels } from "@/types/task"
 import TaskCard from "./task-card"
 
 interface TaskListProps {
   tasks: TaskItem[]
   onUpdated: () => void
   canCreate?: boolean
+  userRole?: string
 }
 
-const filters = ["Semua", "Assigned", "InProgress", "Review", "Revision", "Done"]
+const filters = ["Semua", "Assigned", "Editing", "NeedToBeReviewed", "Review", "Revise", "Completed"]
 
-export default function TaskList({ tasks, onUpdated, canCreate }: TaskListProps) {
+export default function TaskList({ tasks, onUpdated, canCreate, userRole }: TaskListProps) {
   const [activeFilter, setActiveFilter] = useState("Semua")
 
   const filtered =
@@ -33,7 +34,7 @@ export default function TaskList({ tasks, onUpdated, canCreate }: TaskListProps)
                 : "bg-white text-zinc-600 border border-zinc-200 hover:bg-zinc-50"
             }`}
           >
-            {f === "Semua" ? "Semua" : f}
+            {f === "Semua" ? "Semua" : statusLabels[f] || f}
             {f !== "Semua" && (
               <span className="ml-1 text-zinc-400">
                 ({tasks.filter((t) => t.status === f).length})
@@ -55,6 +56,7 @@ export default function TaskList({ tasks, onUpdated, canCreate }: TaskListProps)
               task={task}
               onUpdated={onUpdated}
               canCreate={canCreate}
+              userRole={userRole}
             />
           ))}
         </div>

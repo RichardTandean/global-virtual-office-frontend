@@ -2,7 +2,6 @@
 
 import { Suspense, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import Link from "next/link"
 import { login } from "@/auth"
 
 function LoginForm() {
@@ -83,11 +82,8 @@ function LoginForm() {
         </button>
       </form>
 
-      <p className="mt-4 text-center text-sm text-zinc-500">
-        Belum punya akun?{" "}
-        <Link href="/register" className="font-medium text-zinc-900 hover:underline">
-          Daftar
-        </Link>
+      <p className="mt-4 text-center text-sm text-zinc-400">
+        Hanya admin yang dapat menambahkan akun baru
       </p>
     </div>
   )

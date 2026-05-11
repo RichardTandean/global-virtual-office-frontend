@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 
-const publicPaths = ["/login", "/register"]
+const publicPaths = ["/login"]
 const rolePathMap: Record<string, string[]> = {
   Admin: ["/dashboard/admin", "/dashboard/editor", "/dashboard/korea"],
   KoreaTeam: ["/dashboard/korea", "/dashboard/editor"],

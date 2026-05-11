@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { cookies } from "next/headers"
-
-const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:3001/api"
+import { BACKEND_URL } from "@/lib/session"
 
 export async function POST(req: NextRequest) {
   try {

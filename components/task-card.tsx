@@ -8,9 +8,10 @@ interface TaskCardProps {
   task: TaskItem
   onUpdated: () => void
   canCreate?: boolean
+  userRole?: string
 }
 
-export default function TaskCard({ task, onUpdated, canCreate }: TaskCardProps) {
+export default function TaskCard({ task, onUpdated, canCreate, userRole }: TaskCardProps) {
   const [open, setOpen] = useState(false)
 
   const deadlineText = task.deadline
@@ -23,7 +24,7 @@ export default function TaskCard({ task, onUpdated, canCreate }: TaskCardProps) 
 
   const isOverdue =
     task.deadline &&
-    task.status !== "Done" &&
+    task.status !== "Completed" &&
     new Date(task.deadline) < new Date()
 
   return (
@@ -79,6 +80,7 @@ export default function TaskCard({ task, onUpdated, canCreate }: TaskCardProps) 
           onClose={() => setOpen(false)}
           onUpdated={onUpdated}
           canCreate={canCreate}
+          userRole={userRole}
         />
       )}
     </>
