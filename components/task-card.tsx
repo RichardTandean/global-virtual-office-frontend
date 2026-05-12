@@ -2,7 +2,11 @@
 
 import { useState } from "react"
 import { TaskItem, statusLabels, statusColors } from "@/types/task"
+import { Card, CardContent } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Progress } from "@/components/ui/progress"
 import TaskDetailModal from "./task-detail-modal"
+import { Video, AlertTriangle, Clock, Eye } from "lucide-react"
 
 interface TaskCardProps {
   task: TaskItem
@@ -13,66 +17,87 @@ interface TaskCardProps {
 
 export default function TaskCard({ task, onUpdated, canCreate, userRole }: TaskCardProps) {
   const [open, setOpen] = useState(false)
+  const isReviewer = userRole === "KoreaTeam" || userRole === "Admin"
+  const isEditor = userRole === "Editor"
 
-  const deadlineText = task.deadline
-    ? new Date(task.deadline).toLocaleDateString("id-ID", {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-      })
+  const deadlineDate = task.deadline ? new Date(task.deadline) : null
+  const deadlineValid = deadlineDate && !isNaN(deadlineDate.getTime())
+  const deadlineText = deadlineValid
+    ? deadlineDate!.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })
     : null
 
-  const isOverdue =
-    task.deadline &&
-    task.status !== "Completed" &&
-    new Date(task.deadline) < new Date()
+  const isOverdue = deadlineValid && task.status !== "Completed" && deadlineDate! < new Date()
+
+  const videoCount = (task as any).videoSubmissions?.length || 0
+  const pendingVideoCount = (task as any).videoSubmissions?.filter((v: any) => v.status === "Pending")?.length || 0
+  const needsReview = task.status === "NeedToBeReviewed" || task.status === "Review"
 
   return (
     <>
-      <div
-        onClick={() => setOpen(true)}
-        className="cursor-pointer rounded-lg border border-zinc-200 bg-white p-4 transition-shadow hover:shadow-sm"
-      >
-        <div className="flex items-start justify-between gap-3">
-          <h3 className="text-sm font-semibold text-zinc-900">{task.title}</h3>
-          <span
-            className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${
-              statusColors[task.status]
-            }`}
-          >
-            {statusLabels[task.status]}
-          </span>
-        </div>
+      <Card className="cursor-pointer hover:shadow-sm transition-shadow relative" onClick={() => setOpen(true)}>
+        <CardContent className="p-3 md:p-4">
+          <div className="flex items-start justify-between gap-2">
+            <h3 className="text-sm font-semibold leading-snug">{task.title}</h3>
+            <Badge className={`shrink-0 text-[11px] ${statusColors[task.status]}`} variant="secondary">
+              {statusLabels[task.status]}
+            </Badge>
+          </div>
 
-        {task.description && (
-          <p className="mt-2 line-clamp-2 text-xs text-zinc-500">
-            {task.description}
-          </p>
-        )}
-
-        <div className="mt-3 flex items-center gap-3 text-xs text-zinc-500">
-          <span>{task.assignee.name}</span>
-          {deadlineText && (
-            <span className={isOverdue ? "font-medium text-red-600" : ""}>
-              {isOverdue ? "Terlambat: " : "Deadline: "}
-              {deadlineText}
-            </span>
+          {task.description && (
+            <p className="mt-1.5 line-clamp-2 text-xs text-muted-foreground">{task.description}</p>
           )}
-        </div>
 
-        <div className="mt-3">
-          <div className="flex items-center justify-between text-xs text-zinc-500">
-            <span>Progress</span>
-            <span className="font-medium text-zinc-700">{task.progressPercent}%</span>
+          <div className="mt-2 flex flex-wrap items-center gap-1.5">
+            {isReviewer && needsReview && (
+              <Badge variant="secondary" className="text-[10px] gap-0.5 bg-purple-100 text-purple-700">
+                <Eye className="h-3 w-3" />
+                Perlu review
+              </Badge>
+            )}
+
+            {isReviewer && pendingVideoCount > 0 && (
+              <Badge variant="secondary" className="text-[10px] gap-0.5 bg-blue-100 text-blue-700">
+                <Video className="h-3 w-3" />
+                {pendingVideoCount} video baru
+              </Badge>
+            )}
+
+            {isEditor && task.status === "Revise" && (
+              <Badge variant="secondary" className="text-[10px] gap-0.5 bg-orange-100 text-orange-700">
+                <AlertTriangle className="h-3 w-3" />
+                Ada revisi
+              </Badge>
+            )}
+
+            {isEditor && videoCount === 0 && (task.status === "Editing" || task.status === "Assigned") && (
+              <Badge variant="secondary" className="text-[10px] gap-0.5 bg-zinc-100 text-zinc-600">
+                <Video className="h-3 w-3" />
+                Belum upload
+              </Badge>
+            )}
+
+            {isOverdue && (
+              <Badge variant="destructive" className="text-[10px] gap-0.5">
+                <Clock className="h-3 w-3" />
+                Terlambat
+              </Badge>
+            )}
           </div>
-          <div className="mt-1 h-1.5 w-full rounded-full bg-zinc-100">
-            <div
-              className="h-1.5 rounded-full bg-green-500 transition-all"
-              style={{ width: `${task.progressPercent}%` }}
-            />
+
+          <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+            <span>{task.assignee.name}</span>
+            {deadlineText && <span>{isOverdue ? "" : ""}{deadlineText}</span>}
           </div>
-        </div>
-      </div>
+
+          <div className="mt-2">
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>Progress</span>
+              <span className="font-medium">{task.progressPercent}%</span>
+            </div>
+            <Progress value={task.progressPercent} className="mt-1 h-1" />
+          </div>
+        </CardContent>
+      </Card>
 
       {open && (
         <TaskDetailModal

@@ -60,6 +60,12 @@ export default async function KoreaDashboard() {
           </div>
           <div className="flex items-center gap-4">
             <a
+              href="/dashboard/korea/tasks"
+              className="text-xs text-zinc-500 hover:text-zinc-700 underline"
+            >
+              Task
+            </a>
+            <a
               href="/dashboard/korea/calendar"
               className="text-xs text-zinc-500 hover:text-zinc-700 underline"
             >
@@ -123,6 +129,7 @@ export default async function KoreaDashboard() {
         <KoreaTaskView
           initialTasks={tasks}
           editors={editors}
+          mode="preview"
         />
       </main>
     </div>

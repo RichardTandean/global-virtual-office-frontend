@@ -62,6 +62,12 @@ export default async function EditorDashboard() {
           </div>
           <div className="flex items-center gap-4">
             <a
+              href="/dashboard/editor/tasks"
+              className="text-xs text-zinc-500 hover:text-zinc-700 underline"
+            >
+              Task
+            </a>
+            <a
               href="/dashboard/editor/calendar"
               className="text-xs text-zinc-500 hover:text-zinc-700 underline"
             >
@@ -87,7 +93,7 @@ export default async function EditorDashboard() {
           {fetchError ? (
             <p className="text-sm text-red-500">{fetchError}</p>
           ) : (
-            <EditorTaskView initialTasks={tasks} />
+            <EditorTaskView initialTasks={tasks} mode="preview" />
           )}
         </div>
       </main>

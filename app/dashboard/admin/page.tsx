@@ -27,6 +27,7 @@ interface AdminTask {
   deadline: string | null
   revisionNote: string | null
   youtubeUrl: string | null
+  videoSubmissions?: Array<{ id: string; status: string }>
 }
 
 export default async function AdminDashboard() {
@@ -64,12 +65,19 @@ export default async function AdminDashboard() {
   const taskCounts = {
     total: tasks.length,
     editing: tasks.filter((t) => t.status === "Editing").length,
+    onHold: tasks.filter((t) => t.status === "OnHold").length,
     needReview: tasks.filter((t) => t.status === "NeedToBeReviewed").length,
     review: tasks.filter((t) => t.status === "Review").length,
     revise: tasks.filter((t) => t.status === "Revise").length,
     readyToUpload: tasks.filter((t) => t.status === "ReadyToUpload").length,
     completed: tasks.filter((t) => t.status === "Completed").length,
   }
+
+  const pendingReviewTotal = taskCounts.needReview + taskCounts.review
+  const pendingVideoTotal = tasks.reduce((sum, t) => {
+    const videos = t.videoSubmissions || []
+    return sum + videos.filter((v) => v.status === "Pending").length
+  }, 0)
 
   return (
     <div className="min-h-screen bg-zinc-50">
@@ -96,7 +104,7 @@ export default async function AdminDashboard() {
 
       <main className="mx-auto max-w-5xl px-6 py-8 space-y-8">
         {/* Stats overview */}
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
           <div className="rounded-lg border border-zinc-200 bg-white p-5">
             <p className="text-sm text-zinc-500">Total User</p>
             <p className="text-3xl font-bold text-zinc-900">{users.length}</p>
@@ -119,6 +127,18 @@ export default async function AdminDashboard() {
               {taskCounts.completed}
             </p>
           </div>
+          <div className="rounded-lg border border-zinc-200 bg-white p-5">
+            <p className="text-sm text-zinc-500">Perlu Review</p>
+            <p className="text-3xl font-bold text-purple-600">
+              {pendingReviewTotal}
+            </p>
+          </div>
+          <div className="rounded-lg border border-zinc-200 bg-white p-5">
+            <p className="text-sm text-zinc-500">Video Baru</p>
+            <p className="text-3xl font-bold text-blue-600">
+              {pendingVideoTotal}
+            </p>
+          </div>
         </div>
 
         {/* Task stats breakdown */}
@@ -132,6 +152,7 @@ export default async function AdminDashboard() {
             <div className="grid grid-cols-2 gap-px bg-zinc-200 sm:grid-cols-4">
               {[
                 { label: "Dikerjakan", count: taskCounts.editing, color: "text-blue-600" },
+                { label: "On Hold", count: taskCounts.onHold, color: "text-amber-600" },
                 { label: "Perlu Review", count: taskCounts.needReview, color: "text-purple-600" },
                 { label: "Direview", count: taskCounts.review, color: "text-yellow-600" },
                 { label: "Revisi", count: taskCounts.revise, color: "text-orange-600" },
@@ -139,7 +160,7 @@ export default async function AdminDashboard() {
                 { label: "Selesai", count: taskCounts.completed, color: "text-green-600" },
                 {
                   label: "Ditugaskan",
-                  count: taskCounts.total - taskCounts.editing - taskCounts.needReview - taskCounts.review - taskCounts.revise - taskCounts.readyToUpload - taskCounts.completed,
+                  count: taskCounts.total - taskCounts.editing - taskCounts.onHold - taskCounts.needReview - taskCounts.review - taskCounts.revise - taskCounts.readyToUpload - taskCounts.completed,
                   color: "text-zinc-600",
                 },
               ].map((stat) => (

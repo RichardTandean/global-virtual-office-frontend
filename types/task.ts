@@ -1,6 +1,7 @@
 export type TaskStatus =
   | "Assigned"
   | "Editing"
+  | "OnHold"
   | "NeedToBeReviewed"
   | "Review"
   | "Revise"
@@ -23,12 +24,6 @@ export interface TaskItem {
   createdAt: string
   assignee: { id: string; name: string; email: string }
   assigner: { id: string; name: string; email: string }
-  timeLogs?: Array<{
-    id: string
-    startedAt: string
-    endedAt: string | null
-    durationMinutes: number | null
-  }>
   progressUpdates?: Array<{
     id: string
     fileUrl: string | null
@@ -51,6 +46,7 @@ export interface ProgressUpdateItem {
 export const statusLabels: Record<string, string> = {
   Assigned: "Ditugaskan",
   Editing: "Dikerjakan",
+  OnHold: "On Hold",
   NeedToBeReviewed: "Perlu Direview",
   Review: "Direview",
   Revise: "Revisi",
@@ -61,6 +57,7 @@ export const statusLabels: Record<string, string> = {
 export const statusColors: Record<string, string> = {
   Assigned: "bg-zinc-100 text-zinc-700",
   Editing: "bg-blue-100 text-blue-700",
+  OnHold: "bg-amber-100 text-amber-700",
   NeedToBeReviewed: "bg-purple-100 text-purple-700",
   Review: "bg-yellow-100 text-yellow-700",
   Revise: "bg-orange-100 text-orange-700",
@@ -71,6 +68,7 @@ export const statusColors: Record<string, string> = {
 export const FLOW: TaskStatus[] = [
   "Assigned",
   "Editing",
+  "OnHold",
   "NeedToBeReviewed",
   "Review",
   "Revise",
@@ -80,20 +78,22 @@ export const FLOW: TaskStatus[] = [
 
 export const EDITOR_CAN_CHANGE: Record<TaskStatus, TaskStatus[]> = {
   Assigned: ["Editing"],
-  Editing: ["NeedToBeReviewed"],
+  Editing: ["OnHold", "NeedToBeReviewed"],
+  OnHold: ["Editing"],
   NeedToBeReviewed: [],
   Review: [],
-  Revise: ["NeedToBeReviewed"],
+  Revise: ["OnHold", "NeedToBeReviewed"],
   ReadyToUpload: ["Completed"],
   Completed: [],
 }
 
 export const KOREA_CAN_CHANGE: Record<TaskStatus, TaskStatus[]> = {
   Assigned: ["Editing"],
-  Editing: ["NeedToBeReviewed"],
+  Editing: ["OnHold", "NeedToBeReviewed"],
+  OnHold: ["Editing"],
   NeedToBeReviewed: ["Review"],
   Review: ["Revise", "ReadyToUpload"],
-  Revise: ["NeedToBeReviewed"],
+  Revise: ["OnHold", "NeedToBeReviewed"],
   ReadyToUpload: ["Completed"],
   Completed: [],
 }
