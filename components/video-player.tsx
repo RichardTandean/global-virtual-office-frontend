@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { Card, CardContent } from "@/components/ui/card"
 
 interface VideoPlayerProps {
   videoId?: string
@@ -50,41 +49,35 @@ export default function VideoPlayer({
 
   if (error) {
     return (
-      <Card className="overflow-hidden">
-        <CardContent className="p-8 text-center text-sm text-muted-foreground">
-          Gagal memuat video. Pastikan file sudah diupload dengan benar.
-        </CardContent>
-      </Card>
+      <div className="rounded-md border border-line bg-surface p-8 text-center text-[12px] text-ink-muted">
+        Gagal memuat video. Pastikan file sudah diupload dengan benar.
+      </div>
     )
   }
 
   if (!playUrl) {
     return (
-      <Card className="overflow-hidden">
-        <CardContent className="p-8 text-center text-sm text-muted-foreground">
-          Memuat video...
-        </CardContent>
-      </Card>
+      <div className="rounded-md border border-line bg-surface aspect-video grid place-items-center text-[12px] text-ink-muted animate-pulse">
+        Memuat video...
+      </div>
     )
   }
 
   return (
-    <Card className="overflow-hidden">
-      <CardContent className="p-0">
-        <video
-          ref={videoRef}
-          src={playUrl}
-          controls
-          className="w-full max-h-[60vh] bg-black"
-          onTimeUpdate={(e) => {
-            if (onTimeUpdate) {
-              onTimeUpdate(e.currentTarget.currentTime)
-            }
-          }}
-        >
-          Browser kamu tidak mendukung pemutaran video.
-        </video>
-      </CardContent>
-    </Card>
+    <div className="rounded-md overflow-hidden border border-line bg-black">
+      <video
+        ref={videoRef}
+        src={playUrl}
+        controls
+        className="w-full max-h-[60vh] bg-black"
+        onTimeUpdate={(e) => {
+          if (onTimeUpdate) {
+            onTimeUpdate(e.currentTarget.currentTime)
+          }
+        }}
+      >
+        Browser kamu tidak mendukung pemutaran video.
+      </video>
+    </div>
   )
 }

@@ -1,12 +1,15 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
-import { VideoSubmissionItem, VideoStatus, videoStatusLabels, videoStatusColors } from "@/types/video-submission"
-import { Eye, MessageSquare } from "lucide-react"
+import {
+  VideoSubmissionItem,
+  VideoStatus,
+  videoStatusLabels,
+  videoStatusColors,
+} from "@/types/video-submission"
+import { MessageSquare } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 interface VideoVersionListProps {
   taskId: string
@@ -18,7 +21,6 @@ interface VideoVersionListProps {
 
 export default function VideoVersionList({
   taskId,
-  role,
   onSelectVideo,
   selectedVideoId,
   compact,
@@ -39,13 +41,18 @@ export default function VideoVersionList({
     }
   }, [taskId])
 
-  useEffect(() => { fetchVideos() }, [fetchVideos])
+  useEffect(() => {
+    fetchVideos()
+  }, [fetchVideos])
 
   if (loading) {
     return (
       <div className="space-y-2">
         {[1, 2].map((i) => (
-          <Skeleton key={i} className={`${compact ? "h-14" : "h-20"} w-full`} />
+          <Skeleton
+            key={i}
+            className={`${compact ? "h-12" : "h-16"} w-full`}
+          />
         ))}
       </div>
     )
@@ -53,54 +60,78 @@ export default function VideoVersionList({
 
   if (videos.length === 0) {
     return (
-      <div className="text-center py-6 text-muted-foreground text-sm">
-        Belum ada video yang diupload
+      <div className="rounded-md border border-dashed border-line bg-subtle/30 px-4 py-6 text-center">
+        <p className="text-[11px] text-ink-muted">Belum ada video yang diupload</p>
       </div>
     )
   }
 
   return (
-    <div className="space-y-2">
-      {videos.map((video) => (
-        <Card
-          key={video.id}
-          className={`cursor-pointer transition-colors hover:border-primary/50 ${
-            selectedVideoId === video.id ? "ring-2 ring-primary border-primary" : ""
-          }`}
-          onClick={() => onSelectVideo(video)}
-        >
-          <CardContent className={compact ? "p-2" : "p-3 md:p-4"}>
-            <div className={`flex items-center justify-between ${compact ? "gap-1" : "gap-3"}`}>
-              <div className="flex items-center gap-2 md:gap-3 min-w-0">
-                <Badge variant="secondary" className={`${compact ? "text-xs px-1.5" : "text-sm"} font-mono shrink-0`}>
-                  V{video.version}
-                </Badge>
-                <div className="min-w-0">
-                  <p className={`${compact ? "text-xs" : "text-sm"} font-medium truncate`}>
-                    {video.user.name}
-                  </p>
-                  <p className={`${compact ? "text-[10px]" : "text-xs"} text-muted-foreground`}>
-                    {new Date(video.submittedAt).toLocaleString("id-ID", compact ? { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" } : undefined)}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-1.5 shrink-0">
-                <Badge className={`${compact ? "text-[10px] px-1" : "text-xs px-1.5"} ${videoStatusColors[video.status as VideoStatus]}`}>
+    <div className="relative space-y-0">
+      {/* timeline rail */}
+      <div className="absolute left-[19px] top-2 bottom-2 w-px bg-line" aria-hidden />
+      {videos.map((video) => {
+        const isSelected = selectedVideoId === video.id
+        return (
+          <button
+            key={video.id}
+            type="button"
+            onClick={() => onSelectVideo(video)}
+            className={cn(
+              "relative w-full text-left flex items-start gap-3 rounded-sm pl-1 pr-3 py-2.5",
+              "transition-colors duration-(--dur-fast)",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus",
+              isSelected
+                ? "bg-accent-subtle"
+                : "hover:bg-subtle/60"
+            )}
+          >
+            <span
+              className={cn(
+                "relative z-10 mt-0.5 inline-flex items-center justify-center rounded-pill",
+                "size-9 font-mono text-[11px] font-semibold tabular-nums shrink-0",
+                "border-2",
+                isSelected
+                  ? "border-accent bg-elevated text-accent"
+                  : "border-line bg-elevated text-ink-secondary"
+              )}
+            >
+              V{video.version}
+            </span>
+            <div className="min-w-0 flex-1 pt-1">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-[12px] font-medium text-ink truncate">
+                  {video.user.name}
+                </p>
+                <span
+                  className={cn(
+                    "rounded-xs px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-wider",
+                    videoStatusColors[video.status as VideoStatus]
+                  )}
+                >
                   {videoStatusLabels[video.status as VideoStatus]}
-                </Badge>
-
+                </span>
+              </div>
+              <div className="mt-0.5 flex items-center gap-2 text-[10px] text-ink-muted">
+                <span className="font-mono tabular-nums">
+                  {new Date(video.submittedAt).toLocaleString("id-ID", {
+                    day: "numeric",
+                    month: "short",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </span>
                 {video._count && video._count.comments > 0 && (
-                  <Badge variant="outline" className={`${compact ? "text-[10px] px-1" : "text-xs"} gap-0.5`}>
-                    <MessageSquare className="h-3 w-3" />
-                    {video._count.comments}
-                  </Badge>
+                  <span className="inline-flex items-center gap-0.5">
+                    <MessageSquare className="size-2.5" />
+                    <span className="tabular-nums">{video._count.comments}</span>
+                  </span>
                 )}
               </div>
             </div>
-          </CardContent>
-        </Card>
-      ))}
+          </button>
+        )
+      })}
     </div>
   )
 }

@@ -1,12 +1,11 @@
 "use client"
 
 import { useState, useRef } from "react"
-import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Progress } from "@/components/ui/progress"
 import { toast } from "sonner"
 import { Upload, FileVideo, X } from "lucide-react"
 import { VideoSubmissionItem } from "@/types/video-submission"
+import { cn } from "@/lib/utils"
 
 interface VideoUploaderProps {
   taskId: string
@@ -17,6 +16,7 @@ export default function VideoUploader({ taskId, onUploaded }: VideoUploaderProps
   const [file, setFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
   const [progress, setProgress] = useState(0)
+  const [dragActive, setDragActive] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
   async function handleUpload() {
@@ -84,63 +84,101 @@ export default function VideoUploader({ taskId, onUploaded }: VideoUploaderProps
     if (f) setFile(f)
   }
 
+  function handleDrop(e: React.DragEvent) {
+    e.preventDefault()
+    setDragActive(false)
+    const f = e.dataTransfer.files?.[0]
+    if (f && f.type.startsWith("video/")) setFile(f)
+  }
+
   return (
-    <Card>
-      <CardContent className="p-4 space-y-3">
-        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-          <Upload className="h-4 w-4" />
-          Upload Video Baru
-        </div>
+    <div className="space-y-3">
+      <input
+        ref={fileRef}
+        type="file"
+        accept="video/*"
+        onChange={handleFileSelect}
+        className="hidden"
+      />
 
-        <input
-          ref={fileRef}
-          type="file"
-          accept="video/*"
-          onChange={handleFileSelect}
-          className="hidden"
-        />
-
-        {!file ? (
-          <div
-            onClick={() => fileRef.current?.click()}
-            className="border-2 border-dashed rounded-lg p-6 text-center cursor-pointer hover:border-primary/50 transition-colors"
-          >
-            <FileVideo className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-            <p className="text-sm text-muted-foreground">
-              Klik atau drag & drop file video di sini
+      {!file ? (
+        <button
+          type="button"
+          onClick={() => fileRef.current?.click()}
+          onDragOver={(e) => {
+            e.preventDefault()
+            setDragActive(true)
+          }}
+          onDragLeave={() => setDragActive(false)}
+          onDrop={handleDrop}
+          className={cn(
+            "w-full rounded-md border border-dashed p-8 flex flex-col items-center gap-2.5 text-center",
+            "transition-colors duration-(--dur-fast)",
+            "outline-none focus-visible:ring-2 focus-visible:ring-focus",
+            dragActive
+              ? "border-accent bg-accent-subtle text-accent"
+              : "border-line bg-subtle/40 text-ink-secondary hover:bg-subtle hover:border-line-strong"
+          )}
+        >
+          <Upload className="size-5" />
+          <div className="space-y-1">
+            <p className="text-[12px] font-medium text-ink">
+              Drop video atau klik untuk upload
+            </p>
+            <p className="text-[10px] text-ink-muted">
+              Maks tergantung server · format video apa saja
             </p>
           </div>
-        ) : (
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
-              <FileVideo className="h-5 w-5 text-primary" />
-              <span className="text-sm flex-1 truncate">{file.name}</span>
-              <span className="text-xs text-muted-foreground">
-                {(file.size / (1024 * 1024)).toFixed(1)} MB
-              </span>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6"
-                onClick={() => setFile(null)}
-                disabled={uploading}
-              >
-                <X className="h-3 w-3" />
-              </Button>
+        </button>
+      ) : (
+        <div className="space-y-3 rounded-md border border-line bg-surface p-4">
+          <div className="flex items-center gap-3">
+            <div className="size-10 rounded-sm bg-accent-subtle grid place-items-center text-accent shrink-0">
+              <FileVideo className="size-4" />
             </div>
-
-            {uploading && <Progress value={progress} className="h-2" />}
-
-            <Button
-              onClick={handleUpload}
+            <div className="min-w-0 flex-1">
+              <p className="text-[12px] font-medium text-ink truncate">
+                {file.name}
+              </p>
+              <p className="text-[10px] font-mono tabular-nums text-ink-muted">
+                {(file.size / (1024 * 1024)).toFixed(1)} MB
+              </p>
+            </div>
+            <button
+              onClick={() => setFile(null)}
               disabled={uploading}
-              className="w-full"
+              className="size-7 inline-flex items-center justify-center rounded-xs text-ink-muted hover:text-ink hover:bg-subtle transition-colors disabled:opacity-40"
+              aria-label="Remove file"
             >
-              {uploading ? `Uploading... ${progress}%` : "Upload Video"}
-            </Button>
+              <X className="size-3.5" />
+            </button>
           </div>
-        )}
-      </CardContent>
-    </Card>
+
+          {uploading && (
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between text-[10px] font-mono tabular-nums">
+                <span className="text-ink-secondary">Uploading</span>
+                <span className="text-ink">{progress}%</span>
+              </div>
+              <div className="h-1 w-full rounded-full bg-subtle overflow-hidden">
+                <div
+                  className="h-full bg-accent transition-all duration-(--dur-fast)"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+            </div>
+          )}
+
+          <Button
+            onClick={handleUpload}
+            disabled={uploading}
+            className="w-full"
+          >
+            <Upload />
+            {uploading ? `Uploading ${progress}%` : "Upload video"}
+          </Button>
+        </div>
+      )}
+    </div>
   )
 }

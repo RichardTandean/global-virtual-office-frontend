@@ -11,19 +11,20 @@ interface Props {
 
 export default function OnlineEditors({ users }: Props) {
   return (
-    <div className="rounded-lg border border-green-200 bg-green-50 p-4">
+    <div className="rounded-md border border-line bg-surface p-4">
       <div className="flex items-center gap-2">
-        <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-        <h3 className="text-sm font-semibold text-green-800">
-          {users.length} Editor Sedang Bekerja
+        <span className="size-1.5 rounded-full bg-status-success animate-pulse" />
+        <h3 className="text-[11px] font-medium uppercase tracking-[0.2em] text-ink-muted">
+          <span className="text-ink">{users.length}</span> editor sedang bekerja
         </h3>
       </div>
-      <div className="mt-2 flex flex-wrap gap-2">
+      <div className="mt-3 flex flex-wrap gap-1.5">
         {users.map((u) => (
           <span
             key={u.id}
-            className="inline-flex items-center gap-1 rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-700"
+            className="inline-flex items-center gap-1.5 rounded-pill bg-status-success/10 px-2.5 py-1 text-[11px] font-medium text-status-success"
           >
+            <span className="size-1 rounded-full bg-status-success" />
             {u.name}
           </span>
         ))}

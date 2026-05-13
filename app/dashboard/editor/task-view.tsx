@@ -4,13 +4,44 @@ import { useState, useCallback } from "react"
 import { TaskItem } from "@/types/task"
 import TaskList from "@/components/task-list"
 import TaskCard from "@/components/task-card"
-import { Card, CardContent } from "@/components/ui/card"
-import { AlertTriangle, Edit, Clock, CheckCircle, ArrowRight } from "lucide-react"
+import { EmptyState } from "@/components/ui/empty-state"
+import { AlertTriangle, Edit, Clock, CheckCircle, ArrowRight, ListChecks } from "lucide-react"
 import Link from "next/link"
 
 interface Props {
   initialTasks: TaskItem[]
   mode?: "preview" | "full"
+}
+
+interface MiniStatProps {
+  label: string
+  value: number
+  icon: React.ReactNode
+  tone: "default" | "danger" | "warn" | "success" | "accent"
+}
+
+function MiniStat({ label, value, icon, tone }: MiniStatProps) {
+  const toneClass =
+    tone === "danger"
+      ? "text-status-revise border-status-revise/30 bg-status-revise/8"
+      : tone === "warn"
+      ? "text-status-editing border-status-editing/30 bg-status-editing/8"
+      : tone === "success"
+      ? "text-status-completed border-status-completed/30 bg-status-completed/8"
+      : tone === "accent"
+      ? "text-accent border-accent/30 bg-accent-subtle"
+      : "text-ink-secondary border-line bg-surface"
+  return (
+    <div className={`rounded-md border px-4 py-3 flex items-center gap-3 ${toneClass}`}>
+      <span className="[&_svg]:size-4 shrink-0">{icon}</span>
+      <div>
+        <p className="font-display italic text-2xl leading-none tabular-nums">{value}</p>
+        <p className="text-[10px] font-medium uppercase tracking-wider opacity-80 mt-1">
+          {label}
+        </p>
+      </div>
+    </div>
+  )
 }
 
 export default function EditorTaskView({ initialTasks, mode = "full" }: Props) {
@@ -23,7 +54,9 @@ export default function EditorTaskView({ initialTasks, mode = "full" }: Props) {
         const data = await res.json()
         setTasks(data)
       }
-    } catch { /* silent */ }
+    } catch {
+      /* silent */
+    }
   }, [])
 
   const reviseCount = tasks.filter((t) => t.status === "Revise").length
@@ -31,72 +64,51 @@ export default function EditorTaskView({ initialTasks, mode = "full" }: Props) {
   const assignedCount = tasks.filter((t) => t.status === "Assigned").length
   const completedCount = tasks.filter((t) => t.status === "Completed").length
 
-  const taksWithoutVideo = tasks.filter(
-    (t) => (t.status === "Editing" || t.status === "Assigned") && !(t as any).videoSubmissions?.length
-  ).length
-
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-        {reviseCount > 0 && (
-          <Card className="border-orange-200 bg-orange-50 dark:bg-orange-950">
-            <CardContent className="p-3 flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-orange-600 shrink-0" />
-              <div>
-                <p className="text-lg font-bold text-orange-700">{reviseCount}</p>
-                <p className="text-[10px] text-orange-600">Perlu Revisi</p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-        {editingCount > 0 && (
-          <Card className="border-blue-200 bg-blue-50 dark:bg-blue-950">
-            <CardContent className="p-3 flex items-center gap-2">
-              <Edit className="h-5 w-5 text-blue-600 shrink-0" />
-              <div>
-                <p className="text-lg font-bold text-blue-700">{editingCount}</p>
-                <p className="text-[10px] text-blue-600">Dikerjakan</p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-        {assignedCount > 0 && (
-          <Card className="border-zinc-200 bg-zinc-50 dark:bg-zinc-900">
-            <CardContent className="p-3 flex items-center gap-2">
-              <Clock className="h-5 w-5 text-zinc-500 shrink-0" />
-              <div>
-                <p className="text-lg font-bold text-zinc-700">{assignedCount}</p>
-                <p className="text-[10px] text-zinc-500">Menunggu</p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-        {completedCount > 0 && (
-          <Card className="border-green-200 bg-green-50 dark:bg-green-950">
-            <CardContent className="p-3 flex items-center gap-2">
-              <CheckCircle className="h-5 w-5 text-green-600 shrink-0" />
-              <div>
-                <p className="text-lg font-bold text-green-700">{completedCount}</p>
-                <p className="text-[10px] text-green-600">Selesai</p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+    <div className="space-y-5">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <MiniStat
+          label="Perlu Revisi"
+          value={reviseCount}
+          icon={<AlertTriangle />}
+          tone={reviseCount > 0 ? "danger" : "default"}
+        />
+        <MiniStat
+          label="Dikerjakan"
+          value={editingCount}
+          icon={<Edit />}
+          tone={editingCount > 0 ? "warn" : "default"}
+        />
+        <MiniStat
+          label="Menunggu"
+          value={assignedCount}
+          icon={<Clock />}
+          tone={assignedCount > 0 ? "accent" : "default"}
+        />
+        <MiniStat
+          label="Selesai"
+          value={completedCount}
+          icon={<CheckCircle />}
+          tone={completedCount > 0 ? "success" : "default"}
+        />
       </div>
 
       {mode === "preview" ? (
-        <div className="space-y-3">
+        <div className="space-y-4">
           {tasks.length === 0 ? (
-            <div className="rounded-lg border border-dashed p-8 text-center">
-              <p className="text-sm text-muted-foreground">Belum ada task</p>
-            </div>
+            <EmptyState
+              icon={<ListChecks />}
+              title="Tidak ada task hari ini"
+              description="Saat tim memberikan task, akan muncul di sini."
+              size="sm"
+            />
           ) : (
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               {[...tasks]
                 .sort(
                   (a, b) =>
                     new Date(b.createdAt).getTime() -
-                    new Date(a.createdAt).getTime(),
+                    new Date(a.createdAt).getTime()
                 )
                 .slice(0, 4)
                 .map((t) => (
@@ -109,15 +121,17 @@ export default function EditorTaskView({ initialTasks, mode = "full" }: Props) {
                 ))}
             </div>
           )}
-          <div className="flex justify-end">
-            <Link
-              href="/dashboard/editor/tasks"
-              className="inline-flex items-center gap-1 text-xs text-zinc-600 hover:text-zinc-900 underline"
-            >
-              Lihat semua task
-              <ArrowRight className="h-3 w-3" />
-            </Link>
-          </div>
+          {tasks.length > 0 && (
+            <div className="flex justify-end">
+              <Link
+                href="/dashboard/editor/tasks"
+                className="inline-flex items-center gap-1 rounded-xs px-2 py-1 text-[12px] text-ink-secondary hover:text-ink hover:bg-subtle transition-colors"
+              >
+                Lihat semua task
+                <ArrowRight className="size-3" />
+              </Link>
+            </div>
+          )}
         </div>
       ) : (
         <TaskList tasks={tasks} onUpdated={refreshTasks} userRole="Editor" />

@@ -1,6 +1,16 @@
 import { requireRole } from "@/lib/auth-helpers"
-import SignOutButton from "@/components/sign-out-button"
 import { fetchBackend } from "@/lib/session"
+import { PageHeader } from "@/components/shell/page-header"
+import { StatCard } from "@/components/ui/stat-card"
+import { StatusPill } from "@/components/ui/status-pill"
+import {
+  Activity,
+  AlertTriangle,
+  ListChecks,
+  Video,
+  TrendingUp,
+} from "lucide-react"
+import { MiniBar } from "@/components/charts/mini-bar"
 
 interface User {
   id: string
@@ -27,7 +37,13 @@ interface AdminTask {
   deadline: string | null
   revisionNote: string | null
   youtubeUrl: string | null
+  createdAt: string
+  assignee?: { id: string; name: string }
   videoSubmissions?: Array<{ id: string; status: string }>
+}
+
+function daysSince(date: string) {
+  return Math.floor((Date.now() - new Date(date).getTime()) / (24 * 3600 * 1000))
 }
 
 export default async function AdminDashboard() {
@@ -39,26 +55,24 @@ export default async function AdminDashboard() {
     fetchBackend("/tasks"),
   ])
 
-  if (!usersRes.ok || !logsRes.ok) {
-    throw new Error("Failed to fetch admin data")
-  }
-
-  const users: User[] = await usersRes.json()
-  const { todayLogs }: { todayLogs: TimeLog[] } = await logsRes.json()
-
+  let users: User[] = []
+  let todayLogs: TimeLog[] = []
   let tasks: AdminTask[] = []
-  if (tasksRes.ok) {
-    tasks = await tasksRes.json()
-  }
+
+  if (usersRes.ok) users = await usersRes.json()
+  if (logsRes.ok) ({ todayLogs } = await logsRes.json())
+  if (tasksRes.ok) tasks = await tasksRes.json()
 
   const clockedInUserIds = new Set(
     todayLogs.filter((l) => !l.clockOut).map((l) => l.userId)
   )
 
-  const usersWithStatus = users.map((u) => ({
-    ...u,
-    clockedIn: clockedInUserIds.has(u.id),
-  }))
+  // Today's totals
+  const totalMinutesToday = todayLogs.reduce(
+    (s, l) => s + (l.durationMinutes || 0),
+    0
+  )
+  const teamHoursToday = Math.round((totalMinutesToday / 60) * 10) / 10
 
   const editors = users.filter((u) => u.role === "Editor")
 
@@ -71,208 +85,208 @@ export default async function AdminDashboard() {
     revise: tasks.filter((t) => t.status === "Revise").length,
     readyToUpload: tasks.filter((t) => t.status === "ReadyToUpload").length,
     completed: tasks.filter((t) => t.status === "Completed").length,
+    assigned: tasks.filter((t) => t.status === "Assigned").length,
   }
+  const activeTasks = taskCounts.total - taskCounts.completed
 
-  const pendingReviewTotal = taskCounts.needReview + taskCounts.review
   const pendingVideoTotal = tasks.reduce((sum, t) => {
     const videos = t.videoSubmissions || []
     return sum + videos.filter((v) => v.status === "Pending").length
   }, 0)
 
+  // Bottleneck: tasks not completed and stale > 3 days since createdAt (proxy for last-change)
+  const atRiskTasks = tasks
+    .filter((t) => t.status !== "Completed")
+    .map((t) => ({ ...t, _days: daysSince(t.createdAt) }))
+    .filter((t) => t._days >= 3)
+    .sort((a, b) => b._days - a._days)
+    .slice(0, 6)
+
+  // Distribution data
+  const distribution = [
+    { label: "Assigned", value: taskCounts.assigned, status: "Assigned" },
+    { label: "Editing", value: taskCounts.editing, status: "Editing" },
+    { label: "On Hold", value: taskCounts.onHold, status: "OnHold" },
+    { label: "Need Rev.", value: taskCounts.needReview, status: "NeedToBeReviewed" },
+    { label: "Review", value: taskCounts.review, status: "Review" },
+    { label: "Revise", value: taskCounts.revise, status: "Revise" },
+    { label: "Ready", value: taskCounts.readyToUpload, status: "ReadyToUpload" },
+    { label: "Done", value: taskCounts.completed, status: "Completed" },
+  ]
+
   return (
-    <div className="min-h-screen bg-zinc-50">
-      <header className="border-b border-zinc-200 bg-white">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-          <div>
-            <h1 className="text-lg font-bold text-zinc-900">Lejel WFH</h1>
-            <p className="text-xs text-zinc-500">Admin Dashboard</p>
-          </div>
-          <div className="flex items-center gap-4">
-            <a
-              href="/dashboard/admin/calendar"
-              className="text-xs text-zinc-500 hover:text-zinc-700 underline"
-            >
-              Kalender
-            </a>
-            <span className="text-sm text-zinc-600">
-              {session.user?.name}
-            </span>
-            <SignOutButton />
-          </div>
-        </div>
-      </header>
+    <div className="space-y-10">
+      <PageHeader
+        eyebrow="Admin"
+        title="Overview"
+        description="Visibilitas penuh untuk status tim, pipeline task, dan bottleneck."
+      />
 
-      <main className="mx-auto max-w-5xl px-6 py-8 space-y-8">
-        {/* Stats overview */}
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-          <div className="rounded-lg border border-zinc-200 bg-white p-5">
-            <p className="text-sm text-zinc-500">Total User</p>
-            <p className="text-3xl font-bold text-zinc-900">{users.length}</p>
-          </div>
-          <div className="rounded-lg border border-zinc-200 bg-white p-5">
-            <p className="text-sm text-zinc-500">Clock-in Hari Ini</p>
-            <p className="text-3xl font-bold text-green-600">
-              {clockedInUserIds.size}
-            </p>
-          </div>
-          <div className="rounded-lg border border-zinc-200 bg-white p-5">
-            <p className="text-sm text-zinc-500">Total Task</p>
-            <p className="text-3xl font-bold text-zinc-900">
-              {taskCounts.total}
-            </p>
-          </div>
-          <div className="rounded-lg border border-zinc-200 bg-white p-5">
-            <p className="text-sm text-zinc-500">Task Selesai</p>
-            <p className="text-3xl font-bold text-green-600">
-              {taskCounts.completed}
-            </p>
-          </div>
-          <div className="rounded-lg border border-zinc-200 bg-white p-5">
-            <p className="text-sm text-zinc-500">Perlu Review</p>
-            <p className="text-3xl font-bold text-purple-600">
-              {pendingReviewTotal}
-            </p>
-          </div>
-          <div className="rounded-lg border border-zinc-200 bg-white p-5">
-            <p className="text-sm text-zinc-500">Video Baru</p>
-            <p className="text-3xl font-bold text-blue-600">
-              {pendingVideoTotal}
-            </p>
-          </div>
-        </div>
+      {/* KPI tiles */}
+      <section className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          label="Active tasks"
+          value={activeTasks}
+          icon={<ListChecks />}
+        />
+        <StatCard
+          label="Team online"
+          value={clockedInUserIds.size}
+          suffix={`/ ${users.length}`}
+          icon={<Activity />}
+          tone={clockedInUserIds.size > 0 ? "success" : "default"}
+        />
+        <StatCard
+          label="Jam tim hari ini"
+          value={teamHoursToday}
+          suffix="hrs"
+          icon={<TrendingUp />}
+        />
+        <StatCard
+          label="At-risk tasks"
+          value={atRiskTasks.length}
+          icon={<AlertTriangle />}
+          tone={atRiskTasks.length > 0 ? "danger" : "default"}
+        />
+      </section>
 
-        {/* Task stats breakdown */}
-        {taskCounts.total > 0 && (
-          <div className="rounded-lg border border-zinc-200 bg-white">
-            <div className="border-b border-zinc-200 px-6 py-4">
-              <h2 className="text-lg font-semibold text-zinc-900">
-                Status Task
-              </h2>
-            </div>
-            <div className="grid grid-cols-2 gap-px bg-zinc-200 sm:grid-cols-4">
-              {[
-                { label: "Dikerjakan", count: taskCounts.editing, color: "text-blue-600" },
-                { label: "On Hold", count: taskCounts.onHold, color: "text-amber-600" },
-                { label: "Perlu Review", count: taskCounts.needReview, color: "text-purple-600" },
-                { label: "Direview", count: taskCounts.review, color: "text-yellow-600" },
-                { label: "Revisi", count: taskCounts.revise, color: "text-orange-600" },
-                { label: "Siap Upload", count: taskCounts.readyToUpload, color: "text-teal-600" },
-                { label: "Selesai", count: taskCounts.completed, color: "text-green-600" },
-                {
-                  label: "Ditugaskan",
-                  count: taskCounts.total - taskCounts.editing - taskCounts.onHold - taskCounts.needReview - taskCounts.review - taskCounts.revise - taskCounts.readyToUpload - taskCounts.completed,
-                  color: "text-zinc-600",
-                },
-              ].map((stat) => (
-                <div key={stat.label} className="bg-white p-4 text-center">
-                  <p className={`text-2xl font-bold ${stat.color}`}>
-                    {stat.count}
+      {/* Pipeline distribution + mini chart */}
+      {taskCounts.total > 0 && (
+        <section className="space-y-4">
+          <h2 className="text-[11px] font-medium uppercase tracking-[0.2em] text-ink-muted">
+            Pipeline
+          </h2>
+          <div className="rounded-md border border-line bg-surface p-5 space-y-5">
+            <MiniBar data={distribution} height={140} showAxis />
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-3 border-t border-line">
+              {distribution.map((s) => (
+                <div key={s.status} className="space-y-1.5">
+                  <StatusPill status={s.status} size="sm" />
+                  <p className="font-display italic text-2xl tabular-nums leading-none text-ink">
+                    {s.value}
                   </p>
-                  <p className="text-xs text-zinc-500">{stat.label}</p>
                 </div>
               ))}
             </div>
           </div>
-        )}
+        </section>
+      )}
 
-        {/* Editor status list */}
-        <div className="rounded-lg border border-zinc-200 bg-white">
-          <div className="border-b border-zinc-200 px-6 py-4">
-            <h2 className="text-lg font-semibold text-zinc-900">
-              Status Tim Hari Ini
+      {/* Bottlenecks */}
+      {atRiskTasks.length > 0 && (
+        <section className="space-y-4">
+          <div className="flex items-end justify-between">
+            <h2 className="text-[11px] font-medium uppercase tracking-[0.2em] text-ink-muted">
+              Bottleneck tasks
             </h2>
+            <p className="font-mono text-[11px] tabular-nums text-ink-muted">
+              {atRiskTasks.length} tasks
+            </p>
           </div>
-          <div className="divide-y divide-zinc-100">
-            {usersWithStatus.map((user) => (
+          <div className="rounded-md border border-line bg-surface divide-y divide-line">
+            {atRiskTasks.map((t) => (
               <div
-                key={user.id}
-                className="flex items-center justify-between px-6 py-3"
+                key={t.id}
+                className="flex items-center gap-4 px-5 py-3.5"
               >
-                <div>
-                  <p className="text-sm font-medium text-zinc-900">
-                    {user.name}
+                <span
+                  className={
+                    t._days >= 7
+                      ? "size-1.5 rounded-full bg-status-danger shrink-0"
+                      : "size-1.5 rounded-full bg-status-on-hold shrink-0"
+                  }
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="text-[13px] font-medium text-ink truncate">
+                    {t.title}
                   </p>
-                  <p className="text-xs text-zinc-500">{user.email}</p>
+                  <p className="text-[11px] text-ink-muted">
+                    {t.assignee?.name || "—"}
+                  </p>
                 </div>
-                <div className="flex items-center gap-3">
-                  <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600">
-                    {user.role === "Admin"
-                      ? "Admin"
-                      : user.role === "KoreaTeam"
-                      ? "Korea Team"
-                      : "Editor"}
-                  </span>
-                  <span
-                    className={`h-2 w-2 rounded-full ${
-                      user.clockedIn ? "bg-green-500" : "bg-zinc-300"
-                    }`}
-                  />
-                </div>
+                <StatusPill status={t.status} size="sm" />
+                <span className="font-mono text-[11px] tabular-nums text-ink-secondary shrink-0 w-16 text-right">
+                  {t._days}h diam
+                </span>
               </div>
             ))}
-            {users.length === 0 && (
-              <p className="px-6 py-4 text-sm text-zinc-400">
-                Belum ada user terdaftar.
-              </p>
-            )}
           </div>
-        </div>
+        </section>
+      )}
 
-        {/* Editor list with task context */}
-        {editors.length > 0 && (
-          <div className="rounded-lg border border-zinc-200 bg-white">
-            <div className="border-b border-zinc-200 px-6 py-4">
-              <h2 className="text-lg font-semibold text-zinc-900">
-                Editor & Task
-              </h2>
-            </div>
-            <div className="divide-y divide-zinc-100">
-              {editors.map((ed) => {
+      {/* Team */}
+      <section className="space-y-4">
+        <h2 className="text-[11px] font-medium uppercase tracking-[0.2em] text-ink-muted">
+          Team
+        </h2>
+        <div className="rounded-md border border-line bg-surface overflow-hidden">
+          <table className="w-full text-[12px]">
+            <thead className="bg-subtle/40 border-b border-line">
+              <tr className="text-[10px] font-medium uppercase tracking-wider text-ink-muted">
+                <th className="text-left px-5 py-2.5 font-medium">Name</th>
+                <th className="text-left px-5 py-2.5 font-medium">Role</th>
+                <th className="text-right px-5 py-2.5 font-medium">Active</th>
+                <th className="text-right px-5 py-2.5 font-medium">Hrs today</th>
+                <th className="text-right px-5 py-2.5 font-medium">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-line">
+              {users.map((u) => {
                 const editorTasks = tasks.filter(
-                  (t) => t.assignedTo === ed.id
+                  (t) => t.assignedTo === u.id && t.status !== "Completed"
                 )
-                const doneTasks = editorTasks.filter(
-                  (t) => t.status === "Completed"
-                )
-                const activeTasks = editorTasks.filter(
-                  (t) => t.status !== "Completed"
-                )
+                const userMins = todayLogs
+                  .filter((l) => l.userId === u.id && l.clockOut)
+                  .reduce((s, l) => s + (l.durationMinutes || 0), 0)
+                const hours = Math.round((userMins / 60) * 10) / 10
+                const online = clockedInUserIds.has(u.id)
                 return (
-                  <div
-                    key={ed.id}
-                    className="flex items-center justify-between px-6 py-3"
-                  >
-                    <div>
-                      <p className="text-sm font-medium text-zinc-900">
-                        {ed.name}
-                      </p>
-                      <p className="text-xs text-zinc-500">
-                        {activeTasks.length} task aktif
-                        {doneTasks.length > 0 &&
-                          ` · ${doneTasks.length} selesai`}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`h-2 w-2 rounded-full ${
-                          clockedInUserIds.has(ed.id)
-                            ? "bg-green-500"
-                            : "bg-zinc-300"
-                        }`}
-                      />
-                      <span className="text-xs text-zinc-500">
-                        {clockedInUserIds.has(ed.id)
-                          ? "Online"
-                          : "Offline"}
+                  <tr key={u.id} className="hover:bg-subtle/30 transition-colors">
+                    <td className="px-5 py-3 text-ink font-medium">
+                      <div className="space-y-0.5">
+                        <p>{u.name}</p>
+                        <p className="text-[10px] text-ink-muted">{u.email}</p>
+                      </div>
+                    </td>
+                    <td className="px-5 py-3 text-ink-secondary">
+                      <span className="text-[10px] font-medium uppercase tracking-wider px-1.5 py-0.5 rounded-xs border border-line">
+                        {u.role === "Admin"
+                          ? "Admin"
+                          : u.role === "KoreaTeam"
+                          ? "Korea"
+                          : "Editor"}
                       </span>
-                    </div>
-                  </div>
+                    </td>
+                    <td className="px-5 py-3 text-right font-mono tabular-nums text-ink">
+                      {u.role === "Editor" ? editorTasks.length : "—"}
+                    </td>
+                    <td className="px-5 py-3 text-right font-mono tabular-nums text-ink-secondary">
+                      {hours > 0 ? `${hours}h` : "—"}
+                    </td>
+                    <td className="px-5 py-3 text-right">
+                      <span className="inline-flex items-center gap-1.5 text-[11px] text-ink-secondary">
+                        <span
+                          className={
+                            online
+                              ? "size-1.5 rounded-full bg-status-success animate-pulse"
+                              : "size-1.5 rounded-full bg-ink-muted/40"
+                          }
+                        />
+                        {online ? "Online" : "Offline"}
+                      </span>
+                    </td>
+                  </tr>
                 )
               })}
-            </div>
-          </div>
-        )}
-      </main>
+            </tbody>
+          </table>
+          {users.length === 0 && (
+            <p className="px-5 py-6 text-[12px] text-ink-muted text-center">
+              Belum ada user terdaftar.
+            </p>
+          )}
+        </div>
+      </section>
     </div>
   )
 }

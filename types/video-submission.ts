@@ -37,8 +37,8 @@ export const videoStatusLabels: Record<VideoStatus, string> = {
 };
 
 export const videoStatusColors: Record<VideoStatus, string> = {
-  [VideoStatus.Pending]: "bg-yellow-100 text-yellow-800 border-yellow-200",
-  [VideoStatus.Reviewed]: "bg-blue-100 text-blue-800 border-blue-200",
-  [VideoStatus.Approved]: "bg-green-100 text-green-800 border-green-200",
-  [VideoStatus.Rejected]: "bg-red-100 text-red-800 border-red-200",
+  [VideoStatus.Pending]: "bg-status-on-hold/10 text-status-on-hold",
+  [VideoStatus.Reviewed]: "bg-status-editing/10 text-status-editing",
+  [VideoStatus.Approved]: "bg-status-completed/10 text-status-completed",
+  [VideoStatus.Rejected]: "bg-status-danger/10 text-status-danger",
 };

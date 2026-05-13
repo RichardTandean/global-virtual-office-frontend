@@ -5,7 +5,13 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 interface UserOption {
   id: string
@@ -18,7 +24,11 @@ interface TaskCreateFormProps {
   onCancel: () => void
 }
 
-export default function TaskCreateForm({ editors, onCreated, onCancel }: TaskCreateFormProps) {
+export default function TaskCreateForm({
+  editors,
+  onCreated,
+  onCancel,
+}: TaskCreateFormProps) {
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
   const [briefUrl, setBriefUrl] = useState("")
@@ -34,62 +44,105 @@ export default function TaskCreateForm({ editors, onCreated, onCancel }: TaskCre
       const res = await fetch("/api/tasks", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, description: description || undefined, briefUrl: briefUrl || undefined, assignedTo, deadline: deadline || undefined }),
+        body: JSON.stringify({
+          title,
+          description: description || undefined,
+          briefUrl: briefUrl || undefined,
+          assignedTo,
+          deadline: deadline || undefined,
+        }),
       })
       if (res.ok) {
-        setTitle(""); setDescription(""); setBriefUrl(""); setAssignedTo(""); setDeadline("")
+        setTitle("")
+        setDescription("")
+        setBriefUrl("")
+        setAssignedTo("")
+        setDeadline("")
         onCreated()
       }
-    } finally { setLoading(false) }
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">Buat Task Baru</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-1">
-            <Label>Judul Task</Label>
-            <Input value={title} onChange={(e) => setTitle(e.target.value)} required />
-          </div>
-          <div className="space-y-1">
-            <Label>Deskripsi</Label>
-            <Textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} />
-          </div>
-          <div className="space-y-1">
-            <Label>Brief / Script URL</Label>
-            <Input type="url" value={briefUrl} onChange={(e) => setBriefUrl(e.target.value)} placeholder="https://..." />
-          </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="space-y-1">
-              <Label>Assign ke Editor</Label>
-              <select
-                value={assignedTo}
-                onChange={(e) => setAssignedTo(e.target.value)}
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                required
-              >
-                <option value="">Pilih editor...</option>
+    <div className="rounded-md border border-line bg-surface p-5 space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="font-display italic text-xl text-ink leading-none">
+          Buat task baru
+        </h3>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-1.5">
+          <Label>Judul task</Label>
+          <Input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            required
+            placeholder="Misal: Edit promo flash sale Senin"
+          />
+        </div>
+
+        <div className="space-y-1.5">
+          <Label>Deskripsi</Label>
+          <Textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            rows={3}
+            placeholder="Detail brief, referensi, atau catatan khusus..."
+          />
+        </div>
+
+        <div className="space-y-1.5">
+          <Label>Brief / Script URL</Label>
+          <Input
+            type="url"
+            value={briefUrl}
+            onChange={(e) => setBriefUrl(e.target.value)}
+            placeholder="https://..."
+          />
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="space-y-1.5">
+            <Label>Assign ke editor</Label>
+            <Select
+              value={assignedTo}
+              onValueChange={(v) => setAssignedTo(v ?? "")}
+              required
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Pilih editor..." />
+              </SelectTrigger>
+              <SelectContent>
                 {editors.map((ed) => (
-                  <option key={ed.id} value={ed.id}>{ed.name}</option>
+                  <SelectItem key={ed.id} value={ed.id}>
+                    {ed.name}
+                  </SelectItem>
                 ))}
-              </select>
-            </div>
-            <div className="space-y-1">
-              <Label>Deadline</Label>
-              <Input type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} />
-            </div>
+              </SelectContent>
+            </Select>
           </div>
-          <div className="flex items-center justify-end gap-3 pt-2">
-            <Button type="button" variant="outline" onClick={onCancel} size="sm">Batal</Button>
-            <Button type="submit" disabled={loading} size="sm">
-              {loading ? "Membuat..." : "Buat Task"}
-            </Button>
+          <div className="space-y-1.5">
+            <Label>Deadline</Label>
+            <Input
+              type="date"
+              value={deadline}
+              onChange={(e) => setDeadline(e.target.value)}
+            />
           </div>
-        </form>
-      </CardContent>
-    </Card>
+        </div>
+
+        <div className="flex items-center justify-end gap-2 pt-2 border-t border-line">
+          <Button type="button" variant="ghost" onClick={onCancel} size="sm">
+            Batal
+          </Button>
+          <Button type="submit" disabled={loading} size="sm">
+            {loading ? "Membuat..." : "Buat task"}
+          </Button>
+        </div>
+      </form>
+    </div>
   )
 }

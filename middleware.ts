@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from "next/server"
 
 const publicPaths = ["/login"]
 const rolePathMap: Record<string, string[]> = {
-  Admin: ["/dashboard/admin", "/dashboard/editor", "/dashboard/korea"],
-  KoreaTeam: ["/dashboard/korea", "/dashboard/editor"],
-  Editor: ["/dashboard/editor"],
+  Admin: ["/dashboard/admin", "/dashboard/editor", "/dashboard/korea", "/dashboard/calls", "/dashboard/notifications", "/dashboard/admin/reports"],
+  KoreaTeam: ["/dashboard/korea", "/dashboard/editor", "/dashboard/calls", "/dashboard/notifications"],
+  Editor: ["/dashboard/editor", "/dashboard/calls", "/dashboard/notifications"],
 }
 
 export async function middleware(req: NextRequest) {

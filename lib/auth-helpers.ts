@@ -35,6 +35,7 @@ export async function requireRole(...roles: string[]) {
   if (!session?.user) redirect("/login")
 
   const userRole = session.user.role
+  if (userRole === "Admin") return session
   if (!roles.includes(userRole)) {
     const defaultPaths: Record<string, string> = {
       Admin: "/dashboard/admin",

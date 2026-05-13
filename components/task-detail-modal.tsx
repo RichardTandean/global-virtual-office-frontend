@@ -5,21 +5,17 @@ import {
   TaskItem,
   ProgressUpdateItem,
   statusLabels,
-  statusColors,
   FLOW,
   EDITOR_CAN_CHANGE,
   KOREA_CAN_CHANGE,
 } from "@/types/task"
 import { VideoSubmissionItem, VideoStatus } from "@/types/video-submission"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { Progress } from "@/components/ui/progress"
-import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
+import { StatusPill } from "@/components/ui/status-pill"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,12 +23,24 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { toast } from "sonner"
-import { ChevronDown, Check, X, ArrowLeft } from "lucide-react"
+import {
+  ChevronDown,
+  Check,
+  X,
+  ArrowRight,
+  ExternalLink,
+  Calendar,
+  User,
+  FileText,
+  History,
+  Activity,
+} from "lucide-react"
 import ProgressUpdateForm from "./progress-update-form"
 import VideoVersionList from "./video-version-list"
 import VideoPlayer from "./video-player"
 import VideoUploader from "./video-uploader"
 import AssetList from "./asset-list"
+import { cn } from "@/lib/utils"
 
 interface TaskDetailModalProps {
   task: TaskItem
@@ -76,12 +84,23 @@ export default function TaskDetailModal({
   const [showRevisionForm, setShowRevisionForm] = useState(false)
   const [revisionTargetVideoId, setRevisionTargetVideoId] = useState<string | null>(null)
 
-  const [detailTab, setDetailTab] = useState("detail")
+  const [tab, setTab] = useState<"overview" | "video" | "history" | "assets">(
+    "overview"
+  )
   const [videoCount, setVideoCount] = useState(0)
   const [videoLoading, setVideoLoading] = useState(false)
 
   const isReviewer = userRole === "KoreaTeam" || userRole === "Admin"
   const isEditor = userRole === "Editor"
+
+  // ESC to close
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose()
+    }
+    document.addEventListener("keydown", onKey)
+    return () => document.removeEventListener("keydown", onKey)
+  }, [onClose])
 
   const fetchDetail = useCallback(async () => {
     const res = await fetch(`/api/tasks/${task.id}`)
@@ -94,18 +113,12 @@ export default function TaskDetailModal({
 
   const fetchProgress = useCallback(async () => {
     const res = await fetch(`/api/tasks/${task.id}/progress`)
-    if (res.ok) {
-      const data = await res.json()
-      setProgressUpdates(data)
-    }
+    if (res.ok) setProgressUpdates(await res.json())
   }, [task.id])
 
   const fetchStatusLogs = useCallback(async () => {
     const res = await fetch(`/api/tasks/${task.id}/status-logs`)
-    if (res.ok) {
-      const data = await res.json()
-      setStatusLogs(data)
-    }
+    if (res.ok) setStatusLogs(await res.json())
   }, [task.id])
 
   useEffect(() => {
@@ -117,19 +130,15 @@ export default function TaskDetailModal({
     init()
   }, [fetchDetail, fetchProgress, fetchStatusLogs])
 
-  const allowedTransitions =
-    isEditor
-      ? EDITOR_CAN_CHANGE[detail.status] || []
-      : KOREA_CAN_CHANGE[detail.status] || []
+  const allowedTransitions = isEditor
+    ? EDITOR_CAN_CHANGE[detail.status] || []
+    : KOREA_CAN_CHANGE[detail.status] || []
 
   async function handleStatusChange(newStatus: string) {
     setStatusLoading(true)
     setStatusError("")
-
     const body: any = { status: newStatus }
-    if (newStatus === "Completed" && youtubeUrl) {
-      body.youtubeUrl = youtubeUrl
-    }
+    if (newStatus === "Completed" && youtubeUrl) body.youtubeUrl = youtubeUrl
 
     try {
       const res = await fetch(`/api/tasks/${task.id}/status`, {
@@ -143,7 +152,7 @@ export default function TaskDetailModal({
         setYoutubeUrl("")
         await Promise.all([fetchDetail(), fetchStatusLogs()])
         onUpdated()
-        toast.success(`${statusLabels[newStatus]}`)
+        toast.success(statusLabels[newStatus] || "Status diperbarui")
       } else {
         setStatusError(data.message || "Gagal update status")
       }
@@ -170,7 +179,7 @@ export default function TaskDetailModal({
     }
   }
 
-  async function handleRejectVideo(videoId: string) {
+  function handleRejectVideo(videoId: string) {
     setRevisionTargetVideoId(videoId)
     setRevisionNote("")
     setRevisionAttachment("")
@@ -181,14 +190,12 @@ export default function TaskDetailModal({
     const videoId = revisionTargetVideoId
     if (!videoId || !revisionNote.trim()) return
     setVideoLoading(true)
-
     try {
       await fetch(`/api/video-submissions/${videoId}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: VideoStatus.Rejected }),
       })
-
       await fetch(`/api/tasks/${task.id}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -198,7 +205,6 @@ export default function TaskDetailModal({
           revisionAttachment: revisionAttachment || undefined,
         }),
       })
-
       await Promise.all([fetchDetail(), fetchStatusLogs()])
       onUpdated()
       setShowRevisionForm(false)
@@ -214,11 +220,15 @@ export default function TaskDetailModal({
   }
 
   const deadlineDate = detail.deadline ? new Date(detail.deadline) : null
-  const deadlineText = deadlineDate && !isNaN(deadlineDate.getTime())
-    ? deadlineDate.toLocaleDateString("id-ID", {
-        weekday: "long", day: "numeric", month: "long", year: "numeric",
-      })
-    : "Tidak ada deadline"
+  const deadlineText =
+    deadlineDate && !isNaN(deadlineDate.getTime())
+      ? deadlineDate.toLocaleDateString("id-ID", {
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        })
+      : "Tidak ada deadline"
 
   const currentIdx = FLOW.indexOf(detail.status)
 
@@ -226,349 +236,558 @@ export default function TaskDetailModal({
     fetchDetail()
     onUpdated()
     setSelectedVideo(video)
+    setTab("video")
   }
 
   return (
-    <Dialog open onOpenChange={(open) => { if (!open) onClose() }}>
-      <DialogContent className="max-w-5xl h-[92vh] md:h-[85vh] flex flex-col p-0 gap-0 max-sm:rounded-none max-sm:h-screen max-sm:max-w-full bg-background backdrop-blur-none">
-        <div className="fixed inset-0 -z-10 bg-black/50 backdrop-blur-sm" />
-        <DialogHeader className="px-4 md:px-6 py-3 md:py-4 border-b shrink-0 bg-background">
-          <div className="flex items-center gap-2 md:gap-3">
-            <DialogTitle className="text-base md:text-lg truncate">{detail.title}</DialogTitle>
-            <Badge className={`shrink-0 ${statusColors[detail.status]}`}>{statusLabels[detail.status]}</Badge>
-          </div>
-        </DialogHeader>
-
-        {loading ? (
-          <div className="p-6 space-y-4 bg-background">
-            <Skeleton className="h-8 w-full" />
-            <Skeleton className="h-32 w-full" />
-            <Skeleton className="h-20 w-full" />
-          </div>
-        ) : (
-          <Tabs value={detailTab} onValueChange={setDetailTab} className="flex flex-col flex-1 min-h-0 bg-background">
-            <TabsList className="w-full justify-start rounded-none border-b bg-background px-3 md:px-6 h-auto py-0 gap-0 shrink-0 overflow-x-auto sticky top-0 z-10">
-              <TabsTrigger value="detail" className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none py-2.5 text-xs md:text-sm">
-                Detil
-              </TabsTrigger>
-              <TabsTrigger value="assets" className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none py-2.5 text-xs md:text-sm">
-                Materi
-              </TabsTrigger>
-            </TabsList>
-
-            {/* Tab: Detil — includes video + revision */}
-            <TabsContent value="detail" className="flex-1 overflow-y-auto p-4 md:p-6 space-y-5 md:space-y-6 m-0 bg-background">
-              {/* Meta */}
-              <div className="flex flex-wrap items-center gap-2 md:gap-3">
-                <span className="text-xs text-muted-foreground">
-                  Assigned to: <strong>{detail.assignee.name}</strong>
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  By: <strong>{detail.assigner.name}</strong>
+    <div className="fixed inset-0 z-50">
+      <div
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in-0 duration-(--dur-fast)"
+        onClick={onClose}
+        aria-hidden
+      />
+      <aside
+        role="dialog"
+        aria-labelledby="task-title"
+        className={cn(
+          "absolute inset-y-0 right-0 w-full max-w-3xl bg-surface border-l border-line",
+          "flex flex-col shadow-lg",
+          "animate-in slide-in-from-right duration-(--dur-modal-enter) ease-(--ease-out)"
+        )}
+      >
+        {/* Header */}
+        <header className="px-5 md:px-7 py-4 border-b border-line shrink-0 bg-surface">
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0 flex-1 space-y-1.5">
+              <div className="inline-flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.2em] text-ink-muted">
+                <span>Task</span>
+                <span className="font-mono normal-case tracking-normal text-ink-secondary">
+                  #{detail.id.slice(0, 6)}
                 </span>
               </div>
+              <h2
+                id="task-title"
+                className="font-display italic text-2xl md:text-3xl leading-tight text-ink"
+              >
+                {detail.title}
+              </h2>
+              <StatusPill status={detail.status} size="sm" />
+            </div>
+            <button
+              onClick={onClose}
+              className="size-8 inline-flex items-center justify-center rounded-sm text-ink-muted hover:text-ink hover:bg-subtle transition-colors shrink-0"
+              aria-label="Close"
+            >
+              <X className="size-4" />
+            </button>
+          </div>
 
-              {/* Status flow */}
-              <div className="flex items-center gap-1 overflow-x-auto pb-2">
-                {FLOW.map((s, i) => (
-                  <div key={s} className="flex items-center gap-1 shrink-0">
-                    <div className={`h-1.5 w-4 md:w-5 rounded-full ${i <= currentIdx ? "bg-green-500" : "bg-muted"}`} />
-                    {i < FLOW.length - 1 && (
-                      <div className={`h-px w-1.5 md:w-2 ${i < currentIdx ? "bg-green-400" : "bg-muted"}`} />
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              {/* Revision note */}
-              {detail.status === "Revise" && detail.revisionNote && (
-                <div className="rounded-lg border border-orange-200 bg-orange-50 dark:bg-orange-950 p-3 md:p-4">
-                  <h4 className="text-xs font-semibold uppercase text-orange-700 dark:text-orange-300">Catatan Revisi</h4>
-                  <p className="mt-1 text-sm whitespace-pre-wrap">{detail.revisionNote}</p>
-                  {detail.revisionAttachment && (
-                    <a href={detail.revisionAttachment} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block text-xs underline">
-                      Lihat attachment &rarr;
-                    </a>
+          {/* status flow chips */}
+          <div className="mt-4 flex items-center gap-0.5 overflow-x-auto pb-1">
+            {FLOW.map((s, i) => (
+              <div key={s} className="flex items-center gap-0.5 shrink-0">
+                <div
+                  className={cn(
+                    "h-1 rounded-full transition-colors",
+                    i === currentIdx ? "w-6 bg-accent" : "w-4",
+                    i < currentIdx
+                      ? "bg-accent/60"
+                      : i > currentIdx
+                      ? "bg-line"
+                      : ""
                   )}
-                </div>
-              )}
-
-              {detail.description && (
-                <div>
-                  <h4 className="text-xs font-semibold uppercase text-muted-foreground">Deskripsi</h4>
-                  <p className="mt-1 text-sm whitespace-pre-wrap">{detail.description}</p>
-                </div>
-              )}
-
-              {detail.briefUrl && (
-                <div>
-                  <h4 className="text-xs font-semibold uppercase text-muted-foreground">Brief / Script</h4>
-                  <a href={detail.briefUrl} target="_blank" rel="noopener noreferrer" className="mt-1 inline-block text-sm text-blue-600 hover:underline">
-                    Lihat brief &rarr;
-                  </a>
-                </div>
-              )}
-
-              <div>
-                <h4 className="text-xs font-semibold uppercase text-muted-foreground">Deadline</h4>
-                <p className="mt-1 text-sm">{deadlineText}</p>
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between">
-                  <h4 className="text-xs font-semibold uppercase text-muted-foreground">Progress</h4>
-                  <span className="text-sm font-semibold">{detail.progressPercent}%</span>
-                </div>
-                <Progress value={detail.progressPercent} className="mt-2 h-2" />
-              </div>
-
-              {/* ------ VIDEO SECTION ------ */}
-              <Separator />
-              <div>
-                <h4 className="text-xs font-semibold uppercase text-muted-foreground mb-3 flex items-center gap-2">
-                  Video {videoCount > 0 && <Badge variant="secondary" className="text-[10px]">{videoCount}</Badge>}
-                </h4>
-
-                {isEditor && (
-                  <div className="mb-4">
-                    <VideoUploader taskId={task.id} onUploaded={handleVideoUploaded} />
-                  </div>
+                />
+                {i < FLOW.length - 1 && (
+                  <div className="h-px w-1 bg-line shrink-0" />
                 )}
+              </div>
+            ))}
+          </div>
+        </header>
 
-                {isReviewer && selectedVideo && (
-                  <div className="mb-4">
-                    <VideoPlayer
-                      videoId={selectedVideo.id}
-                      initialTime={videoTime}
-                      onTimeUpdate={setVideoTime}
+        {/* Tabs */}
+        <div className="px-5 md:px-7 border-b border-line shrink-0">
+          <Tabs value={tab} onValueChange={(v) => setTab(v as any)}>
+            <TabsList variant="line" className="border-b-0">
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="video">
+                Video
+                {videoCount > 0 && (
+                  <span className="ml-1 font-mono text-[10px] tabular-nums text-ink-muted">
+                    {videoCount}
+                  </span>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="history">History</TabsTrigger>
+              <TabsTrigger value="assets">Materi</TabsTrigger>
+            </TabsList>
+            <TabsContent value="overview" />
+            <TabsContent value="video" />
+            <TabsContent value="history" />
+            <TabsContent value="assets" />
+          </Tabs>
+        </div>
+
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto">
+          {loading ? (
+            <div className="p-7 space-y-4">
+              <Skeleton className="h-6 w-1/2" />
+              <Skeleton className="h-24 w-full" />
+              <Skeleton className="h-16 w-full" />
+            </div>
+          ) : (
+            <>
+              {tab === "overview" && (
+                <div className="p-5 md:p-7 space-y-6">
+                  {/* Meta strip */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-[12px]">
+                    <MetaRow
+                      icon={<User className="size-3" />}
+                      label="Assigned to"
+                      value={detail.assignee.name}
                     />
+                    <MetaRow
+                      icon={<User className="size-3" />}
+                      label="Created by"
+                      value={detail.assigner.name}
+                    />
+                    <MetaRow
+                      icon={<Calendar className="size-3" />}
+                      label="Deadline"
+                      value={deadlineText}
+                    />
+                    <MetaRow
+                      icon={<Activity className="size-3" />}
+                      label="Progress"
+                      value={
+                        <span className="font-mono tabular-nums text-ink">
+                          {detail.progressPercent}%
+                        </span>
+                      }
+                    />
+                  </div>
 
-                    <div className="flex gap-2 mt-3">
-                      <Button
-                        size="sm"
-                        className="flex-1 bg-green-600 hover:bg-green-700"
-                        disabled={videoLoading}
-                        onClick={() => handleApproveVideo(selectedVideo.id)}
-                      >
-                        <Check className="h-4 w-4 mr-1" />
-                        Setujui
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="flex-1 border-red-300 text-red-600 hover:bg-red-50"
-                        disabled={videoLoading}
-                        onClick={() => handleRejectVideo(selectedVideo.id)}
-                      >
-                        <X className="h-4 w-4 mr-1" />
-                        Tolak (Revisi)
-                      </Button>
+                  {/* Progress bar */}
+                  <div>
+                    <div className="h-1 w-full bg-subtle overflow-hidden rounded-full">
+                      <div
+                        className="h-full bg-accent transition-all duration-(--dur-base)"
+                        style={{ width: `${detail.progressPercent}%` }}
+                      />
                     </div>
+                  </div>
 
-                    {showRevisionForm && revisionTargetVideoId === selectedVideo.id && (
-                      <div className="mt-3 rounded-lg border border-orange-200 bg-orange-50 dark:bg-orange-950 p-3 space-y-2">
-                        <p className="text-xs font-semibold text-orange-800 dark:text-orange-200">Catatan Revisi</p>
-                        <Textarea
-                          value={revisionNote}
-                          onChange={(e) => setRevisionNote(e.target.value)}
-                          rows={3}
-                          placeholder="Tulis catatan revisi..."
-                          className="text-sm"
+                  {/* Revision note */}
+                  {detail.status === "Revise" && detail.revisionNote && (
+                    <div className="rounded-md border border-status-revise/30 bg-status-revise/8 p-4">
+                      <h4 className="text-[10px] font-medium uppercase tracking-[0.2em] text-status-revise">
+                        Catatan revisi
+                      </h4>
+                      <p className="mt-1.5 text-[13px] text-ink whitespace-pre-wrap leading-relaxed">
+                        {detail.revisionNote}
+                      </p>
+                      {detail.revisionAttachment && (
+                        <a
+                          href={detail.revisionAttachment}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-2 inline-flex items-center gap-1 text-[11px] text-accent hover:text-accent-hover hover:underline"
+                        >
+                          Lihat attachment <ExternalLink className="size-3" />
+                        </a>
+                      )}
+                    </div>
+                  )}
+
+                  {detail.description && (
+                    <div className="space-y-1.5">
+                      <h4 className="text-[10px] font-medium uppercase tracking-[0.2em] text-ink-muted">
+                        Deskripsi
+                      </h4>
+                      <p className="text-[13px] text-ink leading-relaxed whitespace-pre-wrap">
+                        {detail.description}
+                      </p>
+                    </div>
+                  )}
+
+                  {detail.briefUrl && (
+                    <div className="space-y-1.5">
+                      <h4 className="text-[10px] font-medium uppercase tracking-[0.2em] text-ink-muted">
+                        Brief / Script
+                      </h4>
+                      <a
+                        href={detail.briefUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 text-[12px] text-accent hover:text-accent-hover hover:underline"
+                      >
+                        <FileText className="size-3" />
+                        Lihat brief
+                        <ExternalLink className="size-3" />
+                      </a>
+                    </div>
+                  )}
+
+                  {/* Status actions */}
+                  {allowedTransitions.length > 0 && (
+                    <div className="space-y-2 pt-2 border-t border-line">
+                      <h4 className="text-[10px] font-medium uppercase tracking-[0.2em] text-ink-muted">
+                        Ubah status
+                      </h4>
+                      {statusError && (
+                        <p className="text-[12px] text-status-danger">
+                          {statusError}
+                        </p>
+                      )}
+
+                      {isEditor &&
+                        (detail.status === "Editing" ||
+                          detail.status === "Revise") &&
+                        videoCount === 0 && (
+                          <div className="rounded-md border border-status-need-review/30 bg-status-need-review/10 p-3">
+                            <p className="text-[12px] text-ink-secondary">
+                              Upload video terlebih dahulu sebelum mengirim
+                              untuk review.
+                            </p>
+                          </div>
+                        )}
+
+                      <DropdownMenu>
+                        <DropdownMenuTrigger
+                          disabled={statusLoading}
+                          render={
+                            <Button size="sm" disabled={statusLoading}>
+                              {statusLoading ? "Memproses..." : "Pilih status"}
+                              <ChevronDown />
+                            </Button>
+                          }
                         />
-                        <Input
-                          type="url"
-                          value={revisionAttachment}
-                          onChange={(e) => setRevisionAttachment(e.target.value)}
-                          placeholder="URL attachment (opsional)"
-                          className="text-xs"
-                        />
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            onClick={handleSubmitRevision}
-                            disabled={videoLoading || !revisionNote.trim()}
-                          >
-                            Kirim Revisi
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              setShowRevisionForm(false)
-                              setRevisionTargetVideoId(null)
+                        <DropdownMenuContent align="start">
+                          {allowedTransitions.map((s) => (
+                            <DropdownMenuItem
+                              key={s}
+                              onClick={() => {
+                                if (s === "Completed" && isEditor) {
+                                  setShowYoutubeInput(true)
+                                  setShowOnHoldForm(false)
+                                } else if (s === "OnHold" && isEditor) {
+                                  setShowOnHoldForm(true)
+                                  setShowYoutubeInput(false)
+                                } else {
+                                  handleStatusChange(s)
+                                }
+                              }}
+                            >
+                              <ArrowRight className="size-3" />
+                              {statusLabels[s]}
+                            </DropdownMenuItem>
+                          ))}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+
+                      {showYoutubeInput && (
+                        <div className="rounded-md border border-status-ready-upload/30 bg-status-ready-upload/8 p-3 space-y-2">
+                          <p className="text-[11px] font-medium text-status-ready-upload uppercase tracking-wider">
+                            Link YouTube (opsional)
+                          </p>
+                          <Input
+                            type="url"
+                            value={youtubeUrl}
+                            onChange={(e) => setYoutubeUrl(e.target.value)}
+                            placeholder="https://youtube.com/watch?v=..."
+                          />
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              onClick={() => handleStatusChange("Completed")}
+                              disabled={statusLoading}
+                            >
+                              Tandai selesai
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => {
+                                setShowYoutubeInput(false)
+                                setYoutubeUrl("")
+                              }}
+                            >
+                              Batal
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+
+                      {showOnHoldForm && (
+                        <div className="rounded-md border border-status-on-hold/30 bg-status-on-hold/8 p-3 space-y-2">
+                          <p className="text-[11px] font-medium text-status-on-hold uppercase tracking-wider">
+                            Update progress sebelum on hold
+                          </p>
+                          <p className="text-[11px] text-ink-secondary">
+                            Tulis progress saat ini agar tim tahu sampai di mana
+                            pekerjaanmu.
+                          </p>
+                          <ProgressUpdateForm
+                            taskId={task.id}
+                            onSubmitted={() => {
+                              fetchProgress()
+                              fetchDetail()
+                              fetchStatusLogs()
+                              onUpdated()
+                              setShowOnHoldForm(false)
+                              toast.success("Progress disimpan, status On Hold")
                             }}
+                          />
+                          <Button
+                            size="xs"
+                            variant="ghost"
+                            onClick={() => setShowOnHoldForm(false)}
                           >
                             Batal
                           </Button>
                         </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                <VideoVersionList
-                  taskId={task.id}
-                  role={userRole || "Editor"}
-                  onSelectVideo={setSelectedVideo}
-                  selectedVideoId={selectedVideo?.id}
-                />
-              </div>
-              {/* ------ END VIDEO ------ */}
-
-              <Separator />
-
-              {/* Status actions */}
-              {allowedTransitions.length > 0 && (
-                <div>
-                  <h4 className="text-xs font-semibold uppercase text-muted-foreground mb-2">Update Status</h4>
-                  {statusError && <p className="mb-2 text-xs text-destructive">{statusError}</p>}
-
-                  {isEditor && (detail.status === "Editing" || detail.status === "Revise") && videoCount === 0 && (
-                    <div className="mb-3 rounded-lg border border-purple-200 bg-purple-50 dark:bg-purple-950 p-3">
-                      <p className="text-xs text-purple-700 dark:text-purple-300">
-                        Upload video terlebih dahulu sebelum mengirim untuk review.
-                      </p>
+                      )}
                     </div>
                   )}
+                </div>
+              )}
 
-                  <DropdownMenu>
-                    <DropdownMenuTrigger
-                      disabled={statusLoading}
-                      className="inline-flex items-center gap-1 rounded-md bg-primary text-primary-foreground px-3 py-1.5 text-sm font-medium hover:bg-primary/90 disabled:opacity-50 cursor-pointer"
-                    >
-                      {statusLoading ? "Memproses..." : "Ubah Status"}
-                      <ChevronDown className="h-3 w-3" />
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="start">
-                      {allowedTransitions.map((s) => (
-                        <DropdownMenuItem
-                          key={s}
-                          onClick={() => {
-                            if (s === "Completed" && isEditor) {
-                              setShowYoutubeInput(true)
-                              setShowOnHoldForm(false)
-                            } else if (s === "OnHold" && isEditor) {
-                              setShowOnHoldForm(true)
-                              setShowYoutubeInput(false)
-                            } else {
-                              handleStatusChange(s)
-                            }
-                          }}
-                        >
-                          <ArrowLeft className="h-3 w-3 mr-2 text-muted-foreground" />
-                          {statusLabels[s]}
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-
-                  {showYoutubeInput && (
-                    <div className="mt-3 space-y-2 rounded-lg border border-teal-200 bg-teal-50 dark:bg-teal-950 p-3">
-                      <p className="text-xs font-semibold text-teal-800 dark:text-teal-200">Link YouTube (opsional)</p>
-                      <Input type="url" value={youtubeUrl} onChange={(e) => setYoutubeUrl(e.target.value)} placeholder="https://youtube.com/watch?v=..." />
-                      <div className="flex gap-2">
-                        <Button size="sm" onClick={() => handleStatusChange("Completed")} disabled={statusLoading}>Selesai</Button>
-                        <Button size="sm" variant="outline" onClick={() => { setShowYoutubeInput(false); setYoutubeUrl("") }}>Batal</Button>
-                      </div>
-                    </div>
+              {tab === "video" && (
+                <div className="p-5 md:p-7 space-y-5">
+                  {isEditor && (
+                    <VideoUploader
+                      taskId={task.id}
+                      onUploaded={handleVideoUploaded}
+                    />
                   )}
 
-                  {showOnHoldForm && (
-                    <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-950 p-3 space-y-2">
-                      <p className="text-xs font-semibold text-amber-800 dark:text-amber-200">
-                        Update progress sebelum On Hold
-                      </p>
-                      <p className="text-[11px] text-amber-700 dark:text-amber-300">
-                        Tulis progress saat ini agar tim tahu sampai di mana pekerjaanmu. Status akan otomatis berubah ke On Hold setelah disimpan.
-                      </p>
-                      <ProgressUpdateForm
-                        taskId={task.id}
-                        onSubmitted={() => {
-                          fetchProgress()
-                          fetchDetail()
-                          fetchStatusLogs()
-                          onUpdated()
-                          setShowOnHoldForm(false)
-                          toast.success("Progress disimpan, status On Hold")
-                        }}
+                  {isReviewer && selectedVideo && (
+                    <div className="space-y-3">
+                      <VideoPlayer
+                        videoId={selectedVideo.id}
+                        initialTime={videoTime}
+                        onTimeUpdate={setVideoTime}
                       />
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => setShowOnHoldForm(false)}
-                      >
-                        Batal
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          className="flex-1 bg-status-success text-white hover:bg-status-success/90"
+                          disabled={videoLoading}
+                          onClick={() => handleApproveVideo(selectedVideo.id)}
+                        >
+                          <Check />
+                          Setujui
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="flex-1 border-status-danger/40 text-status-danger hover:bg-status-danger/10"
+                          disabled={videoLoading}
+                          onClick={() => handleRejectVideo(selectedVideo.id)}
+                        >
+                          <X />
+                          Tolak (Revisi)
+                        </Button>
+                      </div>
+
+                      {showRevisionForm &&
+                        revisionTargetVideoId === selectedVideo.id && (
+                          <div className="rounded-md border border-status-revise/30 bg-status-revise/8 p-3 space-y-2">
+                            <p className="text-[11px] font-medium text-status-revise uppercase tracking-wider">
+                              Catatan revisi
+                            </p>
+                            <Textarea
+                              value={revisionNote}
+                              onChange={(e) => setRevisionNote(e.target.value)}
+                              rows={3}
+                              placeholder="Tulis catatan revisi..."
+                            />
+                            <Input
+                              type="url"
+                              value={revisionAttachment}
+                              onChange={(e) =>
+                                setRevisionAttachment(e.target.value)
+                              }
+                              placeholder="URL attachment (opsional)"
+                            />
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                onClick={handleSubmitRevision}
+                                disabled={videoLoading || !revisionNote.trim()}
+                              >
+                                Kirim revisi
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => {
+                                  setShowRevisionForm(false)
+                                  setRevisionTargetVideoId(null)
+                                }}
+                              >
+                                Batal
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                    </div>
+                  )}
+
+                  <div>
+                    <h4 className="mb-2 text-[10px] font-medium uppercase tracking-[0.2em] text-ink-muted">
+                      Versions
+                    </h4>
+                    <VideoVersionList
+                      taskId={task.id}
+                      role={userRole || "Editor"}
+                      onSelectVideo={setSelectedVideo}
+                      selectedVideoId={selectedVideo?.id}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {tab === "history" && (
+                <div className="p-5 md:p-7 space-y-6">
+                  {statusLogs.length === 0 && progressUpdates.length === 0 && (
+                    <p className="text-[12px] text-ink-muted text-center py-6">
+                      Belum ada riwayat aktivitas.
+                    </p>
+                  )}
+
+                  {statusLogs.length > 0 && (
+                    <div className="space-y-2">
+                      <h4 className="text-[10px] font-medium uppercase tracking-[0.2em] text-ink-muted flex items-center gap-1.5">
+                        <History className="size-3" />
+                        Riwayat status
+                      </h4>
+                      <div className="rounded-md border border-line bg-subtle/30 divide-y divide-line">
+                        {statusLogs.map((log) => (
+                          <div key={log.id} className="px-4 py-3 space-y-1.5">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-[12px] font-medium text-ink">
+                                {log.user.name}
+                              </span>
+                              <span className="font-mono text-[10px] tabular-nums text-ink-muted">
+                                {new Date(log.createdAt).toLocaleString(
+                                  "id-ID",
+                                  {
+                                    day: "numeric",
+                                    month: "short",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  }
+                                )}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1.5 text-[11px]">
+                              <StatusPill
+                                status={log.fromStatus}
+                                size="sm"
+                                variant="ghost"
+                              />
+                              <ArrowRight className="size-3 text-ink-muted" />
+                              <StatusPill status={log.toStatus} size="sm" />
+                            </div>
+                            {log.note && (
+                              <p className="text-[12px] text-ink-secondary">
+                                {log.note}
+                              </p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {progressUpdates.length > 0 && (
+                    <div className="space-y-2">
+                      <h4 className="text-[10px] font-medium uppercase tracking-[0.2em] text-ink-muted flex items-center gap-1.5">
+                        <Activity className="size-3" />
+                        Riwayat progress
+                      </h4>
+                      <div className="rounded-md border border-line bg-subtle/30 divide-y divide-line">
+                        {progressUpdates.map((up) => (
+                          <div key={up.id} className="px-4 py-3 space-y-1.5">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-[12px] font-medium text-ink">
+                                {up.user.name}
+                              </span>
+                              <span className="font-mono text-[10px] tabular-nums text-ink-muted">
+                                {new Date(up.createdAt).toLocaleString(
+                                  "id-ID",
+                                  {
+                                    day: "numeric",
+                                    month: "short",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  }
+                                )}
+                              </span>
+                            </div>
+                            {up.note && (
+                              <p className="text-[12px] text-ink-secondary">
+                                {up.note}
+                              </p>
+                            )}
+                            <div className="flex items-center gap-3">
+                              <span className="font-mono tabular-nums text-[12px] font-semibold text-status-success">
+                                {up.percent}%
+                              </span>
+                              {up.fileUrl && (
+                                <a
+                                  href={up.fileUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-[11px] text-accent hover:underline"
+                                >
+                                  Lihat file
+                                </a>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
               )}
 
-              <Separator />
-
-              {statusLogs.length > 0 && (
-                <div>
-                  <h4 className="text-xs font-semibold uppercase text-muted-foreground mb-2">Riwayat Status</h4>
-                  <div className="space-y-2">
-                    {statusLogs.map((log) => (
-                      <div key={log.id} className="rounded-lg border bg-muted/30 p-3">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-medium">{log.user.name}</span>
-                          <span className="text-xs text-muted-foreground">
-                            {new Date(log.createdAt).toLocaleString("id-ID")}
-                          </span>
-                        </div>
-                        <div className="mt-1 flex items-center gap-1.5 text-xs">
-                          <Badge variant="secondary" className={`text-[10px] ${statusColors[log.fromStatus] || ""}`}>
-                            {statusLabels[log.fromStatus] || log.fromStatus}
-                          </Badge>
-                          <ArrowLeft className="h-3 w-3 rotate-180 text-muted-foreground" />
-                          <Badge variant="secondary" className={`text-[10px] ${statusColors[log.toStatus] || ""}`}>
-                            {statusLabels[log.toStatus] || log.toStatus}
-                          </Badge>
-                        </div>
-                        {log.note && <p className="mt-1 text-sm">{log.note}</p>}
-                      </div>
-                    ))}
-                  </div>
+              {tab === "assets" && (
+                <div className="p-5 md:p-7">
+                  <AssetList
+                    taskId={task.id}
+                    role={userRole || "Editor"}
+                    userId={userRole === "Editor" ? detail.assignee.id : ""}
+                  />
                 </div>
               )}
+            </>
+          )}
+        </div>
+      </aside>
+    </div>
+  )
+}
 
-              {progressUpdates.length > 0 && (
-                <div>
-                  <h4 className="text-xs font-semibold uppercase text-muted-foreground mb-2">Riwayat Progress</h4>
-                  <div className="space-y-3">
-                    {progressUpdates.map((up) => (
-                      <div key={up.id} className="rounded-lg border bg-muted/30 p-3">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-medium">{up.user.name}</span>
-                          <span className="text-xs text-muted-foreground">
-                            {new Date(up.createdAt).toLocaleString("id-ID")}
-                          </span>
-                        </div>
-                        {up.note && <p className="mt-1 text-sm">{up.note}</p>}
-                        <div className="mt-1 flex items-center gap-2">
-                          <span className="text-xs font-semibold text-green-600">{up.percent}%</span>
-                          {up.fileUrl && (
-                            <a href={up.fileUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline">
-                              Lihat file
-                            </a>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </TabsContent>
-
-            {/* Tab: Materi */}
-            <TabsContent value="assets" className="flex-1 overflow-y-auto p-4 md:p-6 m-0 bg-background">
-              <AssetList taskId={task.id} role={userRole || "Editor"} userId={userRole === "Editor" ? detail.assignee.id : ""} />
-            </TabsContent>
-          </Tabs>
-        )}
-      </DialogContent>
-    </Dialog>
+function MetaRow({
+  icon,
+  label,
+  value,
+}: {
+  icon: React.ReactNode
+  label: string
+  value: React.ReactNode
+}) {
+  return (
+    <div className="flex items-baseline gap-2">
+      <span className="text-ink-muted shrink-0 mt-0.5">{icon}</span>
+      <span className="text-[10px] font-medium uppercase tracking-wider text-ink-muted shrink-0 w-20">
+        {label}
+      </span>
+      <span className="text-ink truncate">{value}</span>
+    </div>
   )
 }

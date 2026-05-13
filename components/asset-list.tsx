@@ -1,13 +1,12 @@
 "use client"
 
 import { useState, useEffect, useCallback, useRef } from "react"
-import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { toast } from "sonner"
-import { Paperclip, Download, Trash2, FileText } from "lucide-react"
+import { Paperclip, Download, Trash2, Upload } from "lucide-react"
 import { AssetItem, formatFileSize, getFileIcon } from "@/types/asset"
+import { cn } from "@/lib/utils"
 
 interface AssetListProps {
   taskId: string
@@ -30,7 +29,7 @@ export default function AssetList({ taskId, role, userId }: AssetListProps) {
         setAssets(data)
       }
     } catch {
-      // ignore
+      /* ignore */
     } finally {
       setLoading(false)
     }
@@ -100,10 +99,13 @@ export default function AssetList({ taskId, role, userId }: AssetListProps) {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Paperclip className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm font-medium">
-            Materi Referensi ({assets.length})
+        <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.2em] text-ink-muted">
+          <Paperclip className="size-3.5" />
+          <span>
+            Materi referensi{" "}
+            <span className="font-mono tabular-nums text-ink-secondary">
+              {assets.length}
+            </span>
           </span>
         </div>
 
@@ -116,61 +118,73 @@ export default function AssetList({ taskId, role, userId }: AssetListProps) {
 
         <Button
           variant="outline"
-          size="sm"
+          size="xs"
           onClick={() => fileRef.current?.click()}
           disabled={uploading}
-          className="gap-1"
         >
-          <FileText className="h-3 w-3" />
+          <Upload />
           {uploading ? "Uploading..." : "Upload"}
         </Button>
       </div>
 
       {loading ? (
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {[1, 2].map((i) => (
-            <Skeleton key={i} className="h-16 w-full" />
+            <Skeleton key={i} className="h-14 w-full" />
           ))}
         </div>
       ) : assets.length === 0 ? (
-        <p className="text-center py-6 text-sm text-muted-foreground">
-          Belum ada materi referensi
-        </p>
+        <div className="rounded-md border border-dashed border-line bg-subtle/30 px-4 py-6 text-center">
+          <p className="text-[11px] text-ink-muted">Belum ada materi referensi</p>
+        </div>
       ) : (
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {assets.map((asset) => (
-            <Card key={asset.id}>
-              <CardContent className="p-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-lg">{getFileIcon(asset.fileType)}</span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium truncate">
-                      {asset.label || "File"}
-                    </p>
-                    <p className="text-[10px] text-muted-foreground">
-                      {formatFileSize(asset.fileSize)} - {new Date(asset.createdAt).toLocaleDateString("id-ID")}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <a href={asset.fileUrl} target="_blank" rel="noopener noreferrer">
-                      <Button variant="ghost" size="icon" className="h-6 w-6">
-                        <Download className="h-3 w-3" />
-                      </Button>
-                    </a>
-                    {(role === "Admin" || role === "KoreaTeam" || asset.uploadedBy === userId) && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6 text-muted-foreground hover:text-red-600"
-                        onClick={() => handleDelete(asset.id)}
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
+            <div
+              key={asset.id}
+              className="rounded-md border border-line bg-surface px-3 py-2.5 flex items-center gap-3"
+            >
+              <div className="size-9 rounded-sm bg-subtle grid place-items-center text-[15px] shrink-0">
+                {getFileIcon(asset.fileType)}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[12px] font-medium text-ink truncate">
+                  {asset.label || "File"}
+                </p>
+                <p className="text-[10px] font-mono tabular-nums text-ink-muted">
+                  {formatFileSize(asset.fileSize)} ·{" "}
+                  {new Date(asset.createdAt).toLocaleDateString("id-ID", {
+                    day: "numeric",
+                    month: "short",
+                  })}
+                </p>
+              </div>
+              <div className="flex items-center gap-0.5 shrink-0">
+                <a
+                  href={asset.fileUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="size-7 inline-flex items-center justify-center rounded-xs text-ink-muted hover:text-ink hover:bg-subtle transition-colors"
+                  aria-label="Download"
+                >
+                  <Download className="size-3.5" />
+                </a>
+                {(role === "Admin" ||
+                  role === "KoreaTeam" ||
+                  asset.uploadedBy === userId) && (
+                  <button
+                    onClick={() => handleDelete(asset.id)}
+                    className={cn(
+                      "size-7 inline-flex items-center justify-center rounded-xs transition-colors",
+                      "text-ink-muted hover:text-status-danger hover:bg-status-danger/10"
                     )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                    aria-label="Delete"
+                  >
+                    <Trash2 className="size-3.5" />
+                  </button>
+                )}
+              </div>
+            </div>
           ))}
         </div>
       )}

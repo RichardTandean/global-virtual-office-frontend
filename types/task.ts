@@ -55,14 +55,14 @@ export const statusLabels: Record<string, string> = {
 }
 
 export const statusColors: Record<string, string> = {
-  Assigned: "bg-zinc-100 text-zinc-700",
-  Editing: "bg-blue-100 text-blue-700",
-  OnHold: "bg-amber-100 text-amber-700",
-  NeedToBeReviewed: "bg-purple-100 text-purple-700",
-  Review: "bg-yellow-100 text-yellow-700",
-  Revise: "bg-orange-100 text-orange-700",
-  ReadyToUpload: "bg-teal-100 text-teal-700",
-  Completed: "bg-green-100 text-green-700",
+  Assigned: "bg-status-assigned/10 text-status-assigned",
+  Editing: "bg-status-editing/10 text-status-editing",
+  OnHold: "bg-status-on-hold/10 text-status-on-hold",
+  NeedToBeReviewed: "bg-status-need-review/10 text-status-need-review",
+  Review: "bg-status-review/10 text-status-review",
+  Revise: "bg-status-revise/10 text-status-revise",
+  ReadyToUpload: "bg-status-ready-upload/10 text-status-ready-upload",
+  Completed: "bg-status-completed/10 text-status-completed",
 }
 
 export const FLOW: TaskStatus[] = [

@@ -5,8 +5,8 @@ import { TaskItem } from "@/types/task"
 import TaskCreateForm from "@/components/task-create-form"
 import TaskList from "@/components/task-list"
 import TaskCard from "@/components/task-card"
-import { Card, CardContent } from "@/components/ui/card"
-import { Eye, Video, ArrowRight } from "lucide-react"
+import { EmptyState } from "@/components/ui/empty-state"
+import { Eye, Video, ArrowRight, ListChecks, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 
@@ -21,7 +21,41 @@ interface Props {
   mode?: "preview" | "full"
 }
 
-export default function KoreaTaskView({ initialTasks, editors, mode = "full" }: Props) {
+function MiniStat({
+  label,
+  value,
+  icon,
+  tone,
+}: {
+  label: string
+  value: number
+  icon: React.ReactNode
+  tone: "default" | "warn" | "accent"
+}) {
+  const toneClass =
+    tone === "warn"
+      ? "text-status-need-review border-status-need-review/30 bg-status-need-review/8"
+      : tone === "accent"
+      ? "text-status-editing border-status-editing/30 bg-status-editing/8"
+      : "text-ink-secondary border-line bg-surface"
+  return (
+    <div className={`rounded-md border px-4 py-3 flex items-center gap-3 ${toneClass}`}>
+      <span className="[&_svg]:size-4 shrink-0">{icon}</span>
+      <div>
+        <p className="font-display italic text-2xl leading-none tabular-nums">{value}</p>
+        <p className="text-[10px] font-medium uppercase tracking-wider opacity-80 mt-1">
+          {label}
+        </p>
+      </div>
+    </div>
+  )
+}
+
+export default function KoreaTaskView({
+  initialTasks,
+  editors,
+  mode = "full",
+}: Props) {
   const [tasks, setTasks] = useState<TaskItem[]>(initialTasks)
   const [showCreate, setShowCreate] = useState(false)
 
@@ -32,7 +66,9 @@ export default function KoreaTaskView({ initialTasks, editors, mode = "full" }: 
         const data = await res.json()
         setTasks(data)
       }
-    } catch { /* silent */ }
+    } catch {
+      /* silent */
+    }
   }, [])
 
   const needReviewCount = tasks.filter(
@@ -45,37 +81,30 @@ export default function KoreaTaskView({ initialTasks, editors, mode = "full" }: 
   }, 0)
 
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-2">
-        {needReviewCount > 0 && (
-          <Card className="border-purple-200 bg-purple-50 dark:bg-purple-950">
-            <CardContent className="p-3 flex items-center gap-2">
-              <Eye className="h-5 w-5 text-purple-600 shrink-0" />
-              <div>
-                <p className="text-lg font-bold text-purple-700">{needReviewCount}</p>
-                <p className="text-[10px] text-purple-600">Perlu Review</p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-        {pendingVideoCount > 0 && (
-          <Card className="border-blue-200 bg-blue-50 dark:bg-blue-950">
-            <CardContent className="p-3 flex items-center gap-2">
-              <Video className="h-5 w-5 text-blue-600 shrink-0" />
-              <div>
-                <p className="text-lg font-bold text-blue-700">{pendingVideoCount}</p>
-                <p className="text-[10px] text-blue-600">Video Baru</p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+    <div className="space-y-5">
+      <div className="grid grid-cols-2 gap-3">
+        <MiniStat
+          label="Perlu Review"
+          value={needReviewCount}
+          icon={<Eye />}
+          tone={needReviewCount > 0 ? "warn" : "default"}
+        />
+        <MiniStat
+          label="Video Baru"
+          value={pendingVideoCount}
+          icon={<Video />}
+          tone={pendingVideoCount > 0 ? "accent" : "default"}
+        />
       </div>
 
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Task Management</h2>
+        <h2 className="text-[11px] font-medium uppercase tracking-[0.2em] text-ink-muted">
+          Task Management
+        </h2>
         {mode === "full" && !showCreate && (
           <Button size="sm" onClick={() => setShowCreate(true)}>
-            + Buat Task
+            <Plus />
+            Buat Task
           </Button>
         )}
       </div>
@@ -92,18 +121,29 @@ export default function KoreaTaskView({ initialTasks, editors, mode = "full" }: 
       )}
 
       {mode === "preview" ? (
-        <div className="space-y-3">
+        <div className="space-y-4">
           {tasks.length === 0 ? (
-            <div className="rounded-lg border border-dashed p-8 text-center">
-              <p className="text-sm text-muted-foreground">Belum ada task</p>
-            </div>
+            <EmptyState
+              icon={<ListChecks />}
+              title="Belum ada task"
+              description="Buat task pertama untuk memulai workflow studio."
+              size="sm"
+              action={
+                <Link
+                  href="/dashboard/korea/tasks"
+                  className="text-[12px] text-accent hover:text-accent-hover underline-offset-4 hover:underline"
+                >
+                  Buat task →
+                </Link>
+              }
+            />
           ) : (
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               {[...tasks]
                 .sort(
                   (a, b) =>
                     new Date(b.createdAt).getTime() -
-                    new Date(a.createdAt).getTime(),
+                    new Date(a.createdAt).getTime()
                 )
                 .slice(0, 4)
                 .map((t) => (
@@ -117,15 +157,17 @@ export default function KoreaTaskView({ initialTasks, editors, mode = "full" }: 
                 ))}
             </div>
           )}
-          <div className="flex justify-end">
-            <Link
-              href="/dashboard/korea/tasks"
-              className="inline-flex items-center gap-1 text-xs text-zinc-600 hover:text-zinc-900 underline"
-            >
-              Lihat semua task
-              <ArrowRight className="h-3 w-3" />
-            </Link>
-          </div>
+          {tasks.length > 0 && (
+            <div className="flex justify-end">
+              <Link
+                href="/dashboard/korea/tasks"
+                className="inline-flex items-center gap-1 rounded-xs px-2 py-1 text-[12px] text-ink-secondary hover:text-ink hover:bg-subtle transition-colors"
+              >
+                Lihat semua task
+                <ArrowRight className="size-3" />
+              </Link>
+            </div>
+          )}
         </div>
       ) : (
         <TaskList

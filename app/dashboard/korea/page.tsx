@@ -1,8 +1,13 @@
 import { requireRole } from "@/lib/auth-helpers"
 import { fetchBackend } from "@/lib/session"
 import { TaskItem } from "@/types/task"
-import SignOutButton from "@/components/sign-out-button"
 import KoreaTaskView from "./task-view"
+import { PageHeader } from "@/components/shell/page-header"
+import { StatCard } from "@/components/ui/stat-card"
+import { Eye, Video, Activity, Calendar } from "lucide-react"
+import { MiniBar } from "@/components/charts/mini-bar"
+import { StatusPill } from "@/components/ui/status-pill"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 
 interface UserItem {
   id: string
@@ -20,6 +25,14 @@ interface TimeLogItem {
   user: { id: string; name: string; email: string }
 }
 
+function startOfWeek() {
+  const d = new Date()
+  const day = d.getDay() || 7
+  d.setHours(0, 0, 0, 0)
+  d.setDate(d.getDate() - day + 1)
+  return d
+}
+
 export default async function KoreaDashboard() {
   const session = await requireRole("KoreaTeam")
 
@@ -27,6 +40,7 @@ export default async function KoreaDashboard() {
   let editors: UserItem[] = []
   let clockedInIds: Set<string> = new Set()
   let fetchError: string | null = null
+  let pendingVideoTotal = 0
 
   try {
     const [tasksRes, usersRes, logsRes] = await Promise.all([
@@ -35,7 +49,13 @@ export default async function KoreaDashboard() {
       fetchBackend("/time-tracker/today"),
     ])
 
-    if (tasksRes.ok) tasks = await tasksRes.json()
+    if (tasksRes.ok) {
+      tasks = await tasksRes.json()
+      pendingVideoTotal = tasks.reduce((sum: number, t: any) => {
+        const videos = t.videoSubmissions || []
+        return sum + videos.filter((v: any) => v.status === "Pending").length
+      }, 0)
+    }
     if (usersRes.ok) {
       const users: UserItem[] = await usersRes.json()
       editors = users.filter((u) => u.role === "Editor")
@@ -50,88 +70,170 @@ export default async function KoreaDashboard() {
     fetchError = "Terjadi kesalahan koneksi"
   }
 
+  const pendingReviewTotal = tasks.filter(
+    (t) => t.status === "NeedToBeReviewed" || t.status === "Review"
+  ).length
+
+  const onlineEditorCount = editors.filter((e) => clockedInIds.has(e.id)).length
+
+  const thisWeek = startOfWeek()
+  const thisWeekDeadlines = tasks.filter(
+    (t) => t.deadline && new Date(t.deadline) >= thisWeek && t.status !== "Completed"
+  ).length
+
+  const reviewQueue = tasks
+    .filter((t) => t.status === "NeedToBeReviewed" || t.status === "Review")
+    .slice(0, 5)
+
+  const editorCompletions = editors.map((e) => {
+    const cnt = tasks.filter(
+      (t) => t.assignedTo === e.id && t.status === "Completed"
+    ).length
+    return { label: e.name.split(" ")[0], value: cnt }
+  })
+
   return (
-    <div className="min-h-screen bg-zinc-50">
-      <header className="border-b border-zinc-200 bg-white">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-          <div>
-            <h1 className="text-lg font-bold text-zinc-900">Lejel WFH</h1>
-            <p className="text-xs text-zinc-500">Korea Team Dashboard</p>
-          </div>
-          <div className="flex items-center gap-4">
-            <a
-              href="/dashboard/korea/tasks"
-              className="text-xs text-zinc-500 hover:text-zinc-700 underline"
-            >
-              Task
-            </a>
-            <a
-              href="/dashboard/korea/calendar"
-              className="text-xs text-zinc-500 hover:text-zinc-700 underline"
-            >
-              Kalender
-            </a>
-            <span className="text-sm text-zinc-600">
-              {session.user?.name}
-            </span>
-            <SignOutButton />
-          </div>
+    <div className="space-y-10">
+      <PageHeader
+        eyebrow="Korea Team"
+        title="Review desk"
+        description="Track editor status, review queue, and progress this week."
+      />
+
+      {fetchError && (
+        <div className="rounded-md border border-status-danger/30 bg-status-danger/10 p-4 text-[12px] text-status-danger">
+          {fetchError}
         </div>
-      </header>
+      )}
 
-      <main className="mx-auto max-w-5xl px-6 py-8 space-y-8">
-        {fetchError && (
-          <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-600">
-            {fetchError}
-          </div>
-        )}
-
-        {/* Editor status overview */}
-        {editors.length > 0 && (
-          <div className="rounded-lg border border-zinc-200 bg-white">
-            <div className="border-b border-zinc-200 px-6 py-4">
-              <h2 className="text-lg font-semibold text-zinc-900">
-                Status Editor Hari Ini
-              </h2>
-            </div>
-            <div className="divide-y divide-zinc-100">
-              {editors.map((ed) => {
-                const inOffice = clockedInIds.has(ed.id)
-                return (
-                  <div
-                    key={ed.id}
-                    className="flex items-center justify-between px-6 py-3"
-                  >
-                    <div>
-                      <p className="text-sm font-medium text-zinc-900">
-                        {ed.name}
-                      </p>
-                      <p className="text-xs text-zinc-500">{ed.email}</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`h-2 w-2 rounded-full ${
-                          inOffice ? "bg-green-500" : "bg-zinc-300"
-                        }`}
-                      />
-                      <span className="text-xs text-zinc-500">
-                        {inOffice ? "Sedang bekerja" : "Belum clock-in"}
-                      </span>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Task management */}
-        <KoreaTaskView
-          initialTasks={tasks}
-          editors={editors}
-          mode="preview"
+      {/* Hero metric tiles */}
+      <section className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          label="Pending review"
+          value={pendingReviewTotal}
+          icon={<Eye />}
+          tone={pendingReviewTotal > 0 ? "accent" : "default"}
         />
-      </main>
+        <StatCard
+          label="Videos baru"
+          value={pendingVideoTotal}
+          icon={<Video />}
+        />
+        <StatCard
+          label="Editor online"
+          value={onlineEditorCount}
+          suffix={`/ ${editors.length}`}
+          icon={<Activity />}
+          tone="success"
+        />
+        <StatCard
+          label="Deadlines minggu ini"
+          value={thisWeekDeadlines}
+          icon={<Calendar />}
+        />
+      </section>
+
+      {/* Review queue */}
+      {reviewQueue.length > 0 && (
+        <section className="space-y-4">
+          <div className="flex items-end justify-between">
+            <h2 className="text-[11px] font-medium uppercase tracking-[0.2em] text-ink-muted">
+              Review queue
+            </h2>
+            <p className="font-mono text-[11px] tabular-nums text-ink-muted">
+              {pendingReviewTotal} total
+            </p>
+          </div>
+          <div className="rounded-md border border-line bg-surface divide-y divide-line">
+            {reviewQueue.map((t) => {
+              const initials = t.assignee.name
+                .split(" ")
+                .filter(Boolean)
+                .slice(0, 2)
+                .map((p) => p[0]?.toUpperCase())
+                .join("")
+              return (
+                <div
+                  key={t.id}
+                  className="flex items-center gap-3 px-5 py-3.5"
+                >
+                  <Avatar size="sm">
+                    <AvatarFallback>{initials}</AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[13px] font-medium text-ink truncate">
+                      {t.title}
+                    </p>
+                    <p className="text-[11px] text-ink-muted">
+                      Dikirim oleh {t.assignee.name}
+                    </p>
+                  </div>
+                  <StatusPill status={t.status} size="sm" />
+                </div>
+              )
+            })}
+          </div>
+        </section>
+      )}
+
+      {/* Mini chart: tasks completed per editor this week */}
+      {editorCompletions.some((e) => e.value > 0) && (
+        <section className="space-y-4">
+          <h2 className="text-[11px] font-medium uppercase tracking-[0.2em] text-ink-muted">
+            Selesai minggu ini · per editor
+          </h2>
+          <div className="rounded-md border border-line bg-surface p-5">
+            <MiniBar data={editorCompletions} height={140} showAxis />
+          </div>
+        </section>
+      )}
+
+      {/* Editor status sidebar (full row) */}
+      {editors.length > 0 && (
+        <section className="space-y-4">
+          <h2 className="text-[11px] font-medium uppercase tracking-[0.2em] text-ink-muted">
+            Editor status
+          </h2>
+          <div className="rounded-md border border-line bg-surface divide-y divide-line">
+            {editors.map((ed) => {
+              const inOffice = clockedInIds.has(ed.id)
+              const editorTasks = tasks.filter(
+                (t) => t.assignedTo === ed.id && t.status !== "Completed"
+              )
+              return (
+                <div
+                  key={ed.id}
+                  className="flex items-center justify-between px-5 py-3.5 gap-3"
+                >
+                  <div className="min-w-0">
+                    <p className="text-[13px] font-medium text-ink">
+                      {ed.name}
+                    </p>
+                    <p className="text-[11px] text-ink-muted">
+                      <span className="font-mono tabular-nums">
+                        {editorTasks.length}
+                      </span>{" "}
+                      task aktif
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 text-[11px] text-ink-secondary">
+                    <span
+                      className={
+                        inOffice
+                          ? "size-2 rounded-full bg-status-success animate-pulse"
+                          : "size-2 rounded-full bg-ink-muted/40"
+                      }
+                    />
+                    {inOffice ? "Online" : "Offline"}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </section>
+      )}
+
+      <KoreaTaskView initialTasks={tasks} editors={editors} mode="preview" />
     </div>
   )
 }

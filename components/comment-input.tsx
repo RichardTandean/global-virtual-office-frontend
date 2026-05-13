@@ -5,10 +5,10 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent } from "@/components/ui/card"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { Clock, Send, X } from "lucide-react"
 import { CommentItem } from "@/types/comment"
+import { cn } from "@/lib/utils"
 
 interface CommentInputProps {
   taskId: string
@@ -49,7 +49,9 @@ export default function CommentInput({
     if (!content.trim()) return
     setSubmitting(true)
 
-    const timestampSeconds = showTimestamp ? parseTimestamp(timestampInput) : undefined
+    const timestampSeconds = showTimestamp
+      ? parseTimestamp(timestampInput)
+      : undefined
 
     try {
       const res = await fetch("/api/comments", {
@@ -70,81 +72,75 @@ export default function CommentInput({
       setTimestampInput("")
       setShowTimestamp(false)
     } catch {
-      // ignore
+      /* ignore */
     } finally {
       setSubmitting(false)
     }
   }
 
   return (
-    <Card className={parentId ? "mt-2 ml-8" : ""}>
-      <CardContent className={`${parentId ? "p-3" : "p-4"}`}>
-        <div className="space-y-2">
-          <Textarea
-            ref={textareaRef}
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            placeholder={placeholder}
-            rows={parentId ? 2 : 3}
-            className="resize-none"
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-                handleSubmit()
-              }
-            }}
+    <div
+      className={cn(
+        "rounded-md border border-line bg-surface p-3 space-y-2",
+        parentId && "ml-8"
+      )}
+    >
+      <Textarea
+        ref={textareaRef}
+        value={content}
+        onChange={(e) => setContent(e.target.value)}
+        placeholder={placeholder}
+        rows={parentId ? 2 : 3}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+            handleSubmit()
+          }
+        }}
+      />
+
+      {showTimestamp && (
+        <div className="flex items-center gap-2">
+          <Label className="shrink-0">Timestamp</Label>
+          <Input
+            value={timestampInput}
+            onChange={(e) => setTimestampInput(e.target.value)}
+            placeholder="MM:SS"
+            className="h-7 w-24"
           />
-
-          {showTimestamp && (
-            <div className="flex items-center gap-2">
-              <Label className="text-xs text-muted-foreground">Timestamp (MM:SS):</Label>
-              <Input
-                value={timestampInput}
-                onChange={(e) => setTimestampInput(e.target.value)}
-                placeholder="1:23"
-                className="h-7 w-24 text-xs"
-              />
-            </div>
-          )}
-
-          <div className="flex items-center justify-between">
-            <Tooltip>
-              <TooltipTrigger
-                onClick={() => setShowTimestamp(!showTimestamp)}
-                className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs hover:bg-muted cursor-pointer"
-              >
-                <Clock className="h-3 w-3" />
-                {showTimestamp ? "Hapus timestamp" : "Timestamp"}
-              </TooltipTrigger>
-              <TooltipContent>
-                Tambahkan timestamp video untuk komentar ini
-              </TooltipContent>
-            </Tooltip>
-
-            <div className="flex items-center gap-2">
-              {onCancel && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={onCancel}
-                  className="h-7 text-xs"
-                >
-                  <X className="h-3 w-3 mr-1" />
-                  Batal
-                </Button>
-              )}
-              <Button
-                size="sm"
-                onClick={handleSubmit}
-                disabled={!content.trim() || submitting}
-                className="h-7 text-xs gap-1"
-              >
-                <Send className="h-3 w-3" />
-                {submitting ? "Mengirim..." : "Kirim"}
-              </Button>
-            </div>
-          </div>
         </div>
-      </CardContent>
-    </Card>
+      )}
+
+      <div className="flex items-center justify-between">
+        <Tooltip>
+          <TooltipTrigger
+            onClick={() => setShowTimestamp(!showTimestamp)}
+            className="inline-flex items-center gap-1 rounded-xs px-2 py-1 text-[11px] text-ink-secondary hover:text-ink hover:bg-subtle transition-colors cursor-pointer"
+          >
+            <Clock className="size-3" />
+            {showTimestamp ? "Hapus timestamp" : "Timestamp"}
+          </TooltipTrigger>
+          <TooltipContent>
+            Tambahkan timestamp video untuk komentar ini
+          </TooltipContent>
+        </Tooltip>
+
+        <div className="flex items-center gap-1">
+          {onCancel && (
+            <Button variant="ghost" size="xs" onClick={onCancel}>
+              <X />
+              Batal
+            </Button>
+          )}
+          <Button
+            size="xs"
+            onClick={handleSubmit}
+            disabled={!content.trim() || submitting}
+          >
+            <Send />
+            {submitting ? "Mengirim..." : "Kirim"}
+          </Button>
+        </div>
+      </div>
+    </div>
   )
 }

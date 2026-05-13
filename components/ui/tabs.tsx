@@ -14,22 +14,20 @@ function Tabs({
     <TabsPrimitive.Root
       data-slot="tabs"
       data-orientation={orientation}
-      className={cn(
-        "group/tabs flex gap-2 data-horizontal:flex-col",
-        className
-      )}
+      className={cn("group/tabs flex gap-3 data-horizontal:flex-col", className)}
       {...props}
     />
   )
 }
 
 const tabsListVariants = cva(
-  "group/tabs-list inline-flex w-fit items-center justify-center rounded-lg p-[3px] text-oklch(0.556 0 0) group-data-horizontal/tabs:h-8 group-data-vertical/tabs:h-fit group-data-vertical/tabs:flex-col data-[variant=line]:rounded-none dark:text-oklch(0.708 0 0)",
+  "group/tabs-list inline-flex w-fit items-center justify-center text-ink-secondary group-data-vertical/tabs:flex-col",
   {
     variants: {
       variant: {
-        default: "bg-oklch(0.97 0 0) dark:bg-oklch(0.269 0 0)",
-        line: "gap-1 bg-transparent",
+        default: "rounded-md p-[3px] bg-subtle border border-line h-9",
+        line: "gap-1 bg-transparent border-b border-line w-full justify-start rounded-none",
+        ghost: "gap-1 bg-transparent",
       },
     },
     defaultVariants: {
@@ -58,10 +56,25 @@ function TabsTrigger({ className, ...props }: TabsPrimitive.Tab.Props) {
     <TabsPrimitive.Tab
       data-slot="tabs-trigger"
       className={cn(
-        "relative inline-flex h-[calc(100%-1px)] flex-1 items-center justify-center gap-1.5 rounded-md border border-oklch(0.922 0 0) border-transparent px-1.5 py-0.5 text-sm font-medium whitespace-nowrap text-oklch(0.145 0 0)/60 transition-all group-data-vertical/tabs:w-full group-data-vertical/tabs:justify-start hover:text-oklch(0.145 0 0) focus-visible:border-oklch(0.708 0 0) focus-visible:ring-[3px] focus-visible:ring-oklch(0.708 0 0)/50 focus-visible:outline-1 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-50 has-data-[icon=inline-end]:pr-1 has-data-[icon=inline-start]:pl-1 aria-disabled:pointer-events-none aria-disabled:opacity-50 dark:text-oklch(0.556 0 0) dark:hover:text-oklch(0.145 0 0) group-data-[variant=default]/tabs-list:data-active:shadow-sm group-data-[variant=line]/tabs-list:data-active:shadow-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 dark:border-oklch(1 0 0 / 10%) dark:text-oklch(0.985 0 0)/60 dark:hover:text-oklch(0.985 0 0) dark:focus-visible:border-oklch(0.556 0 0) dark:focus-visible:ring-oklch(0.556 0 0)/50 dark:dark:text-oklch(0.708 0 0) dark:dark:hover:text-oklch(0.985 0 0)",
-        "group-data-[variant=line]/tabs-list:bg-transparent group-data-[variant=line]/tabs-list:data-active:bg-transparent dark:group-data-[variant=line]/tabs-list:data-active:border-transparent dark:group-data-[variant=line]/tabs-list:data-active:bg-transparent",
-        "data-active:bg-oklch(1 0 0) data-active:text-oklch(0.145 0 0) dark:data-active:border-oklch(0.922 0 0) dark:data-active:bg-oklch(0.922 0 0)/30 dark:data-active:text-oklch(0.145 0 0) dark:data-active:bg-oklch(0.145 0 0) dark:data-active:text-oklch(0.985 0 0) dark:dark:data-active:border-oklch(1 0 0 / 15%) dark:dark:data-active:bg-oklch(1 0 0 / 15%)/30 dark:dark:data-active:text-oklch(0.985 0 0)",
-        "after:absolute after:bg-oklch(0.145 0 0) after:opacity-0 after:transition-opacity group-data-horizontal/tabs:after:inset-x-0 group-data-horizontal/tabs:after:bottom-[-5px] group-data-horizontal/tabs:after:h-0.5 group-data-vertical/tabs:after:inset-y-0 group-data-vertical/tabs:after:-right-1 group-data-vertical/tabs:after:w-0.5 group-data-[variant=line]/tabs-list:data-active:after:opacity-100 dark:after:bg-oklch(0.985 0 0)",
+        "relative inline-flex items-center justify-center gap-2 whitespace-nowrap",
+        "text-[12px] font-medium text-ink-secondary",
+        "transition-all duration-(--dur-fast) ease-(--ease-out)",
+        "outline-none focus-visible:ring-2 focus-visible:ring-focus",
+        "disabled:pointer-events-none disabled:opacity-50",
+        // default (segmented)
+        "group-data-[variant=default]/tabs-list:h-7 group-data-[variant=default]/tabs-list:px-3 group-data-[variant=default]/tabs-list:rounded-sm",
+        "group-data-[variant=default]/tabs-list:hover:text-ink",
+        "group-data-[variant=default]/tabs-list:data-active:bg-elevated group-data-[variant=default]/tabs-list:data-active:text-ink group-data-[variant=default]/tabs-list:data-active:shadow-sm",
+        // line variant (underline)
+        "group-data-[variant=line]/tabs-list:px-1 group-data-[variant=line]/tabs-list:py-2.5",
+        "group-data-[variant=line]/tabs-list:hover:text-ink",
+        "group-data-[variant=line]/tabs-list:data-active:text-ink",
+        "group-data-[variant=line]/tabs-list:after:absolute group-data-[variant=line]/tabs-list:after:inset-x-0 group-data-[variant=line]/tabs-list:after:-bottom-px group-data-[variant=line]/tabs-list:after:h-px group-data-[variant=line]/tabs-list:after:bg-accent group-data-[variant=line]/tabs-list:after:opacity-0 group-data-[variant=line]/tabs-list:data-active:after:opacity-100",
+        // ghost variant (chips)
+        "group-data-[variant=ghost]/tabs-list:px-3 group-data-[variant=ghost]/tabs-list:py-1.5 group-data-[variant=ghost]/tabs-list:rounded-pill",
+        "group-data-[variant=ghost]/tabs-list:hover:bg-subtle group-data-[variant=ghost]/tabs-list:hover:text-ink",
+        "group-data-[variant=ghost]/tabs-list:data-active:bg-accent-subtle group-data-[variant=ghost]/tabs-list:data-active:text-accent",
+        "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
         className
       )}
       {...props}
@@ -73,7 +86,7 @@ function TabsContent({ className, ...props }: TabsPrimitive.Panel.Props) {
   return (
     <TabsPrimitive.Panel
       data-slot="tabs-content"
-      className={cn("flex-1 text-sm outline-none", className)}
+      className={cn("flex-1 text-[13px] outline-none", className)}
       {...props}
     />
   )
