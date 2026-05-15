@@ -259,6 +259,8 @@ export function MobileSidebar({ user, open, onClose }: MobileSidebarProps) {
 
   if (!open) return null
 
+  const [pwDialogOpen, setPwDialogOpen] = useState(false)
+
   return (
     <div className="md:hidden fixed inset-0 z-50">
       <div
@@ -317,28 +319,47 @@ export function MobileSidebar({ user, open, onClose }: MobileSidebarProps) {
         </nav>
         <div className="border-t border-line p-3 space-y-2">
           <ThemeToggle variant="row" />
-          <div className="flex items-center gap-2 px-2">
-            <Avatar size="sm">
-              <AvatarFallback>{initials || "—"}</AvatarFallback>
-            </Avatar>
-            <div className="min-w-0 flex-1">
-              <div className="text-[12px] font-medium text-ink truncate">
-                {user.name}
-              </div>
-              <div className="text-[10px] text-ink-muted truncate">
-                {user.email}
-              </div>
-            </div>
-            <button
-              onClick={() => logout()}
-              className="size-8 inline-flex items-center justify-center rounded-sm text-ink-muted hover:text-status-danger hover:bg-status-danger/10 transition-colors"
-              aria-label="Sign out"
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              className={cn(
+                "flex w-full items-center gap-2 rounded-sm px-2 py-2",
+                "hover:bg-elevated transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+              )}
             >
-              <LogOut className="size-3.5" />
-            </button>
-          </div>
+              <Avatar size="sm">
+                <AvatarFallback>{initials || "—"}</AvatarFallback>
+              </Avatar>
+              <div className="min-w-0 flex-1 text-left">
+                <div className="text-[12px] font-medium text-ink truncate">
+                  {user.name}
+                </div>
+                <div className="text-[10px] text-ink-muted truncate">
+                  {user.email}
+                </div>
+              </div>
+              <ChevronsUpDown className="size-3 text-ink-muted shrink-0" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent side="top" align="start" className="w-56">
+              <DropdownMenuGroup>
+                <DropdownMenuLabel>{user.email}</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => setPwDialogOpen(true)}>
+                  <KeyRound className="size-3.5" />
+                  Ganti Password
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem variant="destructive" onClick={() => logout()}>
+                  <LogOut className="size-3.5" />
+                  Keluar
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </aside>
+      {pwDialogOpen && (
+        <ChangePasswordDialog open={pwDialogOpen} onOpenChange={setPwDialogOpen} />
+      )}
     </div>
   )
 }
