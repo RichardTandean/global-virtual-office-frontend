@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { Role, navFor, roleLabel, homeFor } from "./nav-config"
 import { ThemeToggle } from "./theme-toggle"
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import {
   DropdownMenu,
@@ -16,9 +16,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { ChevronsUpDown, LogOut, PanelLeft } from "lucide-react"
+import { ChevronsUpDown, KeyRound, LogOut, PanelLeft } from "lucide-react"
 import { logout } from "@/auth"
 import { useNotifications } from "@/components/notifications/use-notifications"
+import { ChangePasswordDialog } from "./change-password-dialog"
 
 interface AppSidebarProps {
   user: { id: string; name: string; email: string; role: string }
@@ -37,17 +38,20 @@ export function AppSidebar({ user, collapsed, onToggleCollapse }: AppSidebarProp
     .map((p) => p[0]?.toUpperCase())
     .join("")
 
+  const [pwDialogOpen, setPwDialogOpen] = useState(false)
+
   return (
-    <aside
-      data-collapsed={collapsed}
-      className={cn(
-        "group/sidebar relative hidden md:flex flex-col shrink-0",
-        "sticky top-0 h-screen",
-        "bg-subtle border-r border-line",
-        "transition-[width] duration-(--dur-base) ease-(--ease-out)",
-        collapsed ? "w-[64px]" : "w-[240px]"
-      )}
-    >
+    <>
+      <aside
+        data-collapsed={collapsed}
+        className={cn(
+          "group/sidebar relative hidden md:flex flex-col shrink-0",
+          "sticky top-0 h-screen",
+          "bg-subtle border-r border-line",
+          "transition-[width] duration-(--dur-base) ease-(--ease-out)",
+          collapsed ? "w-[64px]" : "w-[240px]"
+        )}
+      >
       {/* Brand */}
       <div
         className={cn(
@@ -151,6 +155,11 @@ export function AppSidebar({ user, collapsed, onToggleCollapse }: AppSidebarProp
             <DropdownMenuGroup>
               <DropdownMenuLabel>{user.email}</DropdownMenuLabel>
               <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => setPwDialogOpen(true)}>
+                <KeyRound className="size-3.5" />
+                Ganti Password
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
               <DropdownMenuItem variant="destructive" onClick={() => logout()}>
                 <LogOut className="size-3.5" />
                 Keluar
@@ -171,6 +180,8 @@ export function AppSidebar({ user, collapsed, onToggleCollapse }: AppSidebarProp
         )}
       </div>
     </aside>
+    <ChangePasswordDialog open={pwDialogOpen} onOpenChange={setPwDialogOpen} />
+    </>
   )
 }
 
