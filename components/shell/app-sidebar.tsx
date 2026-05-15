@@ -41,17 +41,16 @@ export function AppSidebar({ user, collapsed, onToggleCollapse }: AppSidebarProp
   const [pwDialogOpen, setPwDialogOpen] = useState(false)
 
   return (
-    <>
-      <aside
-        data-collapsed={collapsed}
-        className={cn(
-          "group/sidebar relative hidden md:flex flex-col shrink-0",
-          "sticky top-0 h-screen",
-          "bg-subtle border-r border-line",
-          "transition-[width] duration-(--dur-base) ease-(--ease-out)",
-          collapsed ? "w-[64px]" : "w-[240px]"
-        )}
-      >
+    <aside
+      data-collapsed={collapsed}
+      className={cn(
+        "group/sidebar relative hidden md:flex flex-col shrink-0",
+        "sticky top-0 h-screen",
+        "bg-subtle border-r border-line",
+        "transition-[width] duration-(--dur-base) ease-(--ease-out)",
+        collapsed ? "w-[64px]" : "w-[240px]"
+      )}
+    >
       {/* Brand */}
       <div
         className={cn(
@@ -179,9 +178,8 @@ export function AppSidebar({ user, collapsed, onToggleCollapse }: AppSidebarProp
           </button>
         )}
       </div>
+      <ChangePasswordDialog open={pwDialogOpen} onOpenChange={setPwDialogOpen} />
     </aside>
-    <ChangePasswordDialog open={pwDialogOpen} onOpenChange={setPwDialogOpen} />
-    </>
   )
 }
 
