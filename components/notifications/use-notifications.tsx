@@ -102,18 +102,33 @@ export function NotificationsProvider({
       try {
         es = new EventSource("/api/notifications/stream")
       } catch {
+        retry = setTimeout(connect, 5000)
         return
       }
 
+      es.onopen = () => {
+        // connection established, no action needed
+      }
+
       es.onmessage = (e) => {
-        if (!e.data || e.data === "ping" || e.data === "connected") return
+        if (!e.data) return
+        if (e.data === "connected") return
+
+        // handle legacy ping format from older backends
+        if (e.data === '{"ping":true}') return
+
         try {
           const data = JSON.parse(e.data)
+          // ignore ping/connected JSON objects
+          if (data && data.ping) return
+          if (data && data.connected) return
+
           const items: NotificationItem[] = Array.isArray(data) ? data : [data]
           let newCount = 0
           setNotifications((prev) => {
             const map = new Map(prev.map((n) => [n.id, n]))
             for (const it of items) {
+              if (!it.id) continue
               if (!seenIdsRef.current.has(it.id)) {
                 seenIdsRef.current.add(it.id)
                 if (!it.isRead) newCount += 1
@@ -136,7 +151,6 @@ export function NotificationsProvider({
       es.onerror = () => {
         es?.close()
         es = null
-        // backoff retry
         retry = setTimeout(connect, 5000)
       }
     }
