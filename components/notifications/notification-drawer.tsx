@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import { createPortal } from "react-dom"
 import { X, CheckCheck, Inbox } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
@@ -102,7 +103,7 @@ export function NotificationDrawer({ open, onClose }: NotificationDrawerProps) {
 
   if (!open) return null
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50">
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in-0 duration-(--dur-fast)"
@@ -267,6 +268,7 @@ export function NotificationDrawer({ open, onClose }: NotificationDrawerProps) {
           )}
         </div>
       </aside>
-    </div>
+    </div>,
+    document.body
   )
 }
