@@ -178,7 +178,9 @@ export function AppSidebar({ user, collapsed, onToggleCollapse }: AppSidebarProp
           </button>
         )}
       </div>
-      <ChangePasswordDialog open={pwDialogOpen} onOpenChange={setPwDialogOpen} />
+      {pwDialogOpen && (
+        <ChangePasswordDialog open={pwDialogOpen} onOpenChange={setPwDialogOpen} />
+      )}
     </aside>
   )
 }

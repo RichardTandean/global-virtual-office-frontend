@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
 import { KeyRound, AlertCircle, Loader2 } from "lucide-react"
 import { changePassword } from "@/auth"
 import {
@@ -23,7 +22,6 @@ interface ChangePasswordDialogProps {
 }
 
 export function ChangePasswordDialog({ open, onOpenChange }: ChangePasswordDialogProps) {
-  const router = useRouter()
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
 
