@@ -1,5 +1,6 @@
 import { requireRole } from "@/lib/auth-helpers"
 import { fetchBackend } from "@/lib/session"
+import { getTranslations } from "next-intl/server"
 import { TaskItem } from "@/types/task"
 import TimeTracker from "@/components/time-tracker"
 import EditorTaskView from "./task-view"
@@ -36,6 +37,7 @@ function isToday(d: Date) {
 
 export default async function EditorDashboard() {
   const session = await requireRole("Editor")
+  const t = await getTranslations()
 
   let tasks: TaskItem[] = []
   let onlineUsers: { id: string; name: string }[] = []
@@ -71,10 +73,9 @@ export default async function EditorDashboard() {
         .reduce((sum, l) => sum + (l.durationMinutes || 0), 0)
     }
   } catch {
-    fetchError = "Terjadi kesalahan koneksi"
+    fetchError = t("error.connectionError")
   }
 
-  // Stats
   const myTasks = tasks
   const dueTodayCount = myTasks.filter(
     (t) =>
@@ -103,34 +104,33 @@ export default async function EditorDashboard() {
   return (
     <div className="space-y-10">
       <PageHeader
-        eyebrow={`Halo, ${session.user?.name.split(" ")[0] || "editor"}`}
-        title="Studio hari ini"
-        description="Sesi waktu, task aktif, dan revisi yang perlu kamu sentuh."
+        eyebrow={t("editor.greeting", { name: session.user?.name.split(" ")[0] || "editor" })}
+        title={t("editor.today")}
+        description={t("editor.todayDesc")}
       />
 
-      {/* Hero row: time tracker + glance */}
       <section className="grid lg:grid-cols-[2fr_1fr] gap-4">
         <TimeTracker />
         <div className="rounded-lg border border-line bg-surface p-5 flex flex-col justify-between">
           <p className="text-[10px] font-medium uppercase tracking-[0.2em] text-ink-muted">
-            Hari ini
+            {t("editor.today")}
           </p>
           <div className="flex-1 grid grid-cols-3 gap-3 mt-3">
             <GlanceTile
               icon={<Clock />}
-              label="Jam tercatat"
+              label={t("editor.hoursRecorded")}
               value={hoursStat.value}
               suffix={hoursStat.suffix}
             />
             <GlanceTile
               icon={<CheckSquare />}
-              label="Due today"
+              label={t("editor.dueToday")}
               value={dueTodayCount}
               tone={dueTodayCount > 0 ? "warn" : "default"}
             />
             <GlanceTile
               icon={<AlertTriangle />}
-              label="Revisi"
+              label={t("editor.revisions")}
               value={reviseCount}
               tone={reviseCount > 0 ? "danger" : "default"}
             />
@@ -143,26 +143,25 @@ export default async function EditorDashboard() {
         {onlineUsers.length > 0 && <OnlineEditors users={onlineUsers} />}
       </section>
 
-      {/* Recent revisions panel */}
       {recentRevisions.length > 0 && (
         <section className="space-y-4">
           <h2 className="text-[11px] font-medium uppercase tracking-[0.2em] text-ink-muted">
-            Revisi terbaru
+            {t("editor.latestRevisions")}
           </h2>
           <div className="rounded-md border border-line bg-surface divide-y divide-line">
-            {recentRevisions.map((t) => (
-              <div key={t.id} className="px-5 py-4 flex items-start gap-3">
+            {recentRevisions.map((task) => (
+              <div key={task.id} className="px-5 py-4 flex items-start gap-3">
                 <span className="mt-1 size-1.5 rounded-full bg-status-revise shrink-0" />
                 <div className="min-w-0 flex-1">
                   <p className="text-[13px] font-medium text-ink truncate">
-                    {t.title}
+                    {task.title}
                   </p>
                   <p className="mt-1 text-[12px] text-ink-secondary line-clamp-2 leading-relaxed">
-                    {t.revisionNote}
+                    {task.revisionNote}
                   </p>
                 </div>
                 <span className="font-mono text-[10px] tabular-nums text-ink-muted shrink-0">
-                  {new Date(t.createdAt).toLocaleDateString("id-ID", {
+                  {new Date(task.createdAt).toLocaleDateString("id-ID", {
                     day: "numeric",
                     month: "short",
                   })}
@@ -176,10 +175,10 @@ export default async function EditorDashboard() {
       <section className="space-y-4">
         <div className="flex items-end justify-between">
           <h2 className="text-[11px] font-medium uppercase tracking-[0.2em] text-ink-muted">
-            My tasks
+            {t("editor.myTasks")}
           </h2>
           <p className="font-mono text-[11px] tabular-nums text-ink-muted">
-            {myTasks.length} total
+            {t("editor.totalTasks", { n: myTasks.length })}
           </p>
         </div>
         {fetchError ? (

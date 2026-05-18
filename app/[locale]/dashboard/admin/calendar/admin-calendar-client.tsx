@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { CalendarPanel } from "@/components/calendar/calendar-panel"
 import { EventDialog } from "@/components/calendar/event-dialog"
@@ -14,6 +15,7 @@ interface Props {
 }
 
 export function AdminCalendarClient({ initialTasks, initialEvents, month }: Props) {
+  const t = useTranslations()
   const [tasks] = useState<CalendarTask[]>(initialTasks)
   const [events, setEvents] = useState<CalendarEvent[]>(initialEvents)
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -52,16 +54,16 @@ export function AdminCalendarClient({ initialTasks, initialEvents, month }: Prop
       <div className="flex items-center justify-between">
         <div>
           <p className="text-[10px] uppercase tracking-[0.18em] text-ink-muted font-medium">
-            Kalender
+            {t("adminCalendar.eyebrow")}
           </p>
-          <h1 className="font-display italic text-2xl text-ink">Operasi Tim</h1>
+          <h1 className="font-display italic text-2xl text-ink">{t("adminCalendar.title")}</h1>
           <p className="text-[12px] text-ink-secondary">
-            Tinjau deadline semua role dan tim secara keseluruhan.
+            {t("adminCalendar.desc")}
           </p>
         </div>
         <Button size="sm" onClick={handleAddClick} className="gap-1.5">
           <Plus className="size-3.5" />
-          Tambah Event
+          {t("calendar.addEvent")}
         </Button>
       </div>
 

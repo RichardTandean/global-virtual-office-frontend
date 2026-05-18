@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useRef } from "react"
+import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
@@ -25,8 +26,9 @@ export default function CommentInput({
   parentId,
   onCommentAdded,
   onCancel,
-  placeholder = "Tulis komentar...",
+  placeholder,
 }: CommentInputProps) {
+  const t = useTranslations()
   const [content, setContent] = useState("")
   const [showTimestamp, setShowTimestamp] = useState(false)
   const [timestampInput, setTimestampInput] = useState("")
@@ -89,7 +91,7 @@ export default function CommentInput({
         ref={textareaRef}
         value={content}
         onChange={(e) => setContent(e.target.value)}
-        placeholder={placeholder}
+        placeholder={placeholder ?? (parentId ? t("comments.writeReply") : t("comments.writeComment"))}
         rows={parentId ? 2 : 3}
         onKeyDown={(e) => {
           if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
@@ -100,11 +102,11 @@ export default function CommentInput({
 
       {showTimestamp && (
         <div className="flex items-center gap-2">
-          <Label className="shrink-0">Timestamp</Label>
+          <Label className="shrink-0">{t("comments.timestamp")}</Label>
           <Input
             value={timestampInput}
             onChange={(e) => setTimestampInput(e.target.value)}
-            placeholder="MM:SS"
+            placeholder={t("comments.timestampPlaceholder")}
             className="h-7 w-24"
           />
         </div>
@@ -117,10 +119,10 @@ export default function CommentInput({
             className="inline-flex items-center gap-1 rounded-xs px-2 py-1 text-[11px] text-ink-secondary hover:text-ink hover:bg-subtle transition-colors cursor-pointer"
           >
             <Clock className="size-3" />
-            {showTimestamp ? "Hapus timestamp" : "Timestamp"}
+            {showTimestamp ? t("comments.removeTimestamp") : t("comments.timestamp")}
           </TooltipTrigger>
           <TooltipContent>
-            Tambahkan timestamp video untuk komentar ini
+            {t("comments.addTimestamp")}
           </TooltipContent>
         </Tooltip>
 
@@ -128,7 +130,7 @@ export default function CommentInput({
           {onCancel && (
             <Button variant="ghost" size="xs" onClick={onCancel}>
               <X />
-              Batal
+              {t("common.cancel")}
             </Button>
           )}
           <Button
@@ -137,7 +139,7 @@ export default function CommentInput({
             disabled={!content.trim() || submitting}
           >
             <Send />
-            {submitting ? "Mengirim..." : "Kirim"}
+            {submitting ? t("common.submitting") : t("common.submit")}
           </Button>
         </div>
       </div>

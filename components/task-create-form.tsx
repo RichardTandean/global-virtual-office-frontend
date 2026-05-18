@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -29,6 +30,7 @@ export default function TaskCreateForm({
   onCreated,
   onCancel,
 }: TaskCreateFormProps) {
+  const t = useTranslations()
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
   const [briefUrl, setBriefUrl] = useState("")
@@ -69,51 +71,51 @@ export default function TaskCreateForm({
     <div className="rounded-md border border-line bg-surface p-5 space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="font-display italic text-xl text-ink leading-none">
-          Buat task baru
+          {t("taskCreate.heading")}
         </h3>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-1.5">
-          <Label>Judul task</Label>
+          <Label>{t("taskCreate.titleLabel")}</Label>
           <Input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             required
-            placeholder="Misal: Edit promo flash sale Senin"
+            placeholder={t("taskCreate.titlePlaceholder")}
           />
         </div>
 
         <div className="space-y-1.5">
-          <Label>Deskripsi</Label>
+          <Label>{t("taskCreate.descLabel")}</Label>
           <Textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={3}
-            placeholder="Detail brief, referensi, atau catatan khusus..."
+            placeholder={t("taskCreate.descPlaceholder")}
           />
         </div>
 
         <div className="space-y-1.5">
-          <Label>Brief / Script URL</Label>
+          <Label>{t("taskCreate.briefLabel")}</Label>
           <Input
             type="url"
             value={briefUrl}
             onChange={(e) => setBriefUrl(e.target.value)}
-            placeholder="https://..."
+            placeholder={t("taskCreate.briefPlaceholder")}
           />
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
-            <Label>Assign ke editor</Label>
+            <Label>{t("taskCreate.assignLabel")}</Label>
             <Select
               value={assignedTo}
               onValueChange={(v) => setAssignedTo(v ?? "")}
               required
             >
               <SelectTrigger className="w-full">
-                <SelectValue placeholder="Pilih editor..." />
+                <SelectValue placeholder={t("taskCreate.assignPlaceholder")} />
               </SelectTrigger>
               <SelectContent>
                 {editors.map((ed) => (
@@ -125,7 +127,7 @@ export default function TaskCreateForm({
             </Select>
           </div>
           <div className="space-y-1.5">
-            <Label>Deadline</Label>
+            <Label>{t("taskCreate.deadlineLabel")}</Label>
             <Input
               type="date"
               value={deadline}
@@ -136,10 +138,10 @@ export default function TaskCreateForm({
 
         <div className="flex items-center justify-end gap-2 pt-2 border-t border-line">
           <Button type="button" variant="ghost" onClick={onCancel} size="sm">
-            Batal
+            {t("common.cancel")}
           </Button>
           <Button type="submit" disabled={loading} size="sm">
-            {loading ? "Membuat..." : "Buat task"}
+            {loading ? t("taskCreate.creating") : t("taskCreate.createBtn")}
           </Button>
         </div>
       </form>

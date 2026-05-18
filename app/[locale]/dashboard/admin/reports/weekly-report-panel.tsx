@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
+import { useTranslations } from "next-intl"
 import { ChevronLeft, ChevronRight, Download, ArrowUpDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -41,6 +42,7 @@ function formatRange(weekStart: Date) {
 }
 
 export function WeeklyReportPanel() {
+  const t = useTranslations()
   const [weekStart, setWeekStart] = useState<Date>(() => startOfIsoWeek(new Date()))
   const [rows, setRows] = useState<ReportRow[]>([])
   const [loading, setLoading] = useState(true)
@@ -116,7 +118,7 @@ export function WeeklyReportPanel() {
             variant="ghost"
             size="icon-sm"
             onClick={() => shiftWeek(-1)}
-            aria-label="Minggu sebelumnya"
+            aria-label={t("reports.prevWeek")}
           >
             <ChevronLeft className="size-4" />
           </Button>
@@ -125,17 +127,14 @@ export function WeeklyReportPanel() {
               {formatRange(weekStart)}
             </p>
             <p className="mt-1 text-[11px] text-ink-muted">
-              Minggu mulai{" "}
-              <span className="font-mono tabular-nums">
-                {weekStart.toLocaleDateString("id-ID")}
-              </span>
+              {t("reports.weekLabel", { date: weekStart.toLocaleDateString("id-ID") })}
             </p>
           </div>
           <Button
             variant="ghost"
             size="icon-sm"
             onClick={() => shiftWeek(1)}
-            aria-label="Minggu berikutnya"
+            aria-label={t("reports.nextWeek")}
           >
             <ChevronRight className="size-4" />
           </Button>
@@ -145,7 +144,7 @@ export function WeeklyReportPanel() {
             className="ml-2"
             onClick={() => setWeekStart(startOfIsoWeek(new Date()))}
           >
-            Minggu ini
+            {t("reports.thisWeek")}
           </Button>
         </div>
 
@@ -154,16 +153,16 @@ export function WeeklyReportPanel() {
           className="inline-flex items-center gap-1.5 h-8 rounded-sm border border-line bg-surface px-3 text-[12px] font-medium text-ink hover:bg-elevated transition-colors"
         >
           <Download className="size-4" />
-          Export CSV
+          {t("reports.exportCSV")}
         </a>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <StatTile label="Total editor" value={rows.length.toString()} />
-        <StatTile label="Total jam" value={formatHours(totals.minutes)} />
-        <StatTile label="Total task selesai" value={totals.tasks.toString()} />
+        <StatTile label={t("reports.totalEditors")} value={rows.length.toString()} />
+        <StatTile label={t("reports.totalHours")} value={formatHours(totals.minutes)} />
+        <StatTile label={t("reports.totalTasks")} value={totals.tasks.toString()} />
         <StatTile
-          label="Rata-rata jam / editor"
+          label={t("reports.avgHours")}
           value={
             rows.length > 0
               ? formatHours(Math.round(totals.minutes / rows.length))
@@ -185,18 +184,18 @@ export function WeeklyReportPanel() {
         ) : rows.length === 0 ? (
           <div className="p-10">
             <EmptyState
-              title="Belum ada data"
-              description="Tidak ada laporan untuk minggu ini."
+              title={t("reports.noData")}
+              description={t("reports.noDataDesc")}
             />
           </div>
         ) : (
           <table className="w-full text-left text-[12px]">
             <thead>
               <tr className="border-b border-line bg-subtle/30 text-[10px] uppercase tracking-[0.16em] text-ink-muted">
-                <Th label="Editor" sortKey="name" onClick={toggleSort} active={sortKey} dir={sortDir} />
-                <Th label="Role" sortKey="role" onClick={toggleSort} active={sortKey} dir={sortDir} />
+                <Th label={t("reports.editorCol")} sortKey="name" onClick={toggleSort} active={sortKey} dir={sortDir} />
+                <Th label={t("reports.roleCol")} sortKey="role" onClick={toggleSort} active={sortKey} dir={sortDir} />
                 <Th
-                  label="Jam"
+                  label={t("reports.hoursCol")}
                   sortKey="totalMinutes"
                   onClick={toggleSort}
                   active={sortKey}
@@ -204,7 +203,7 @@ export function WeeklyReportPanel() {
                   align="right"
                 />
                 <Th
-                  label="Task selesai"
+                  label={t("reports.tasksCol")}
                   sortKey="tasksCompleted"
                   onClick={toggleSort}
                   active={sortKey}
@@ -212,7 +211,7 @@ export function WeeklyReportPanel() {
                   align="right"
                 />
                 <Th
-                  label="Rata-rata / task"
+                  label={t("reports.avgCol")}
                   sortKey="avgMinutesPerTask"
                   onClick={toggleSort}
                   active={sortKey}

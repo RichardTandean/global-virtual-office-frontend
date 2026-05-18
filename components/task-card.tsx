@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useTranslations } from "next-intl"
 import { TaskItem } from "@/types/task"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { StatusPill } from "@/components/ui/status-pill"
@@ -22,7 +23,10 @@ interface TaskCardProps {
   userRole?: string
 }
 
-function relativeDeadline(deadline: Date): {
+function relativeDeadline(
+  deadline: Date,
+  t: ReturnType<typeof useTranslations>
+): {
   label: string
   tone: "muted" | "warn" | "danger"
 } {
@@ -32,12 +36,18 @@ function relativeDeadline(deadline: Date): {
   const days = Math.round(diff / dayMs)
   if (diff < 0) {
     const overdue = Math.abs(days)
-    return { label: overdue === 0 ? "Hari ini lewat" : `${overdue}h lewat`, tone: "danger" }
+    return {
+      label:
+        overdue === 0
+          ? t("tasks.deadline.overdue")
+          : t("tasks.deadline.overdueHours", { n: overdue }),
+      tone: "danger",
+    }
   }
-  if (days === 0) return { label: "Hari ini", tone: "warn" }
-  if (days === 1) return { label: "Besok", tone: "warn" }
-  if (days <= 3) return { label: `${days} hari lagi`, tone: "warn" }
-  if (days <= 7) return { label: `${days} hari lagi`, tone: "muted" }
+  if (days === 0) return { label: t("tasks.deadline.today"), tone: "warn" }
+  if (days === 1) return { label: t("tasks.deadline.tomorrow"), tone: "warn" }
+  if (days <= 3) return { label: t("tasks.deadline.daysLeft", { n: days }), tone: "warn" }
+  if (days <= 7) return { label: t("tasks.deadline.daysLeft", { n: days }), tone: "muted" }
   return {
     label: deadline.toLocaleDateString("id-ID", { day: "numeric", month: "short" }),
     tone: "muted",
@@ -50,6 +60,7 @@ export default function TaskCard({
   canCreate,
   userRole,
 }: TaskCardProps) {
+  const t = useTranslations()
   const [open, setOpen] = useState(false)
   const isReviewer = userRole === "KoreaTeam" || userRole === "Admin"
   const isEditor = userRole === "Editor"
@@ -58,7 +69,7 @@ export default function TaskCard({
   const deadlineValid = deadlineDate && !isNaN(deadlineDate.getTime())
   const isCompleted = task.status === "Completed"
   const deadlineInfo =
-    deadlineValid && !isCompleted ? relativeDeadline(deadlineDate!) : null
+    deadlineValid && !isCompleted ? relativeDeadline(deadlineDate!, t) : null
 
   const videoCount = (task as any).videoSubmissions?.length || 0
   const pendingVideoCount =
@@ -107,19 +118,19 @@ export default function TaskCard({
             {isReviewer && needsReview && (
               <span className="inline-flex items-center gap-1 rounded-xs bg-status-need-review/10 text-status-need-review px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider">
                 <Eye className="size-3" />
-                Perlu review
+                {t("tasks.badges.needsReview")}
               </span>
             )}
             {isReviewer && pendingVideoCount > 0 && (
               <span className="inline-flex items-center gap-1 rounded-xs bg-status-editing/10 text-status-editing px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider">
                 <Video className="size-3" />
-                <span className="tabular-nums">{pendingVideoCount}</span> baru
+                <span className="tabular-nums">{t("tasks.badges.newVideos", { n: pendingVideoCount })}</span>
               </span>
             )}
             {isEditor && task.status === "Revise" && (
               <span className="inline-flex items-center gap-1 rounded-xs bg-status-revise/10 text-status-revise px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider">
                 <AlertTriangle className="size-3" />
-                Ada revisi
+                {t("tasks.badges.hasRevision")}
               </span>
             )}
             {isEditor &&
@@ -127,7 +138,7 @@ export default function TaskCard({
               (task.status === "Editing" || task.status === "Assigned") && (
                 <span className="inline-flex items-center gap-1 rounded-xs bg-subtle text-ink-muted px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider">
                   <Video className="size-3" />
-                  Belum upload
+                  {t("tasks.badges.notUploaded")}
                 </span>
               )}
           </div>

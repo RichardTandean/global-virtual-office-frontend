@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { useTranslations } from "next-intl"
 import { PageHeader } from "@/components/shell/page-header"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -42,6 +43,7 @@ function useCookieUser() {
 }
 
 export default function CallsPage() {
+  const t = useTranslations()
   const [rooms, setRooms] = useState<CallRoom[]>([])
   const [loading, setLoading] = useState(true)
   const [activeRoom, setActiveRoom] = useState<CallRoom | null>(null)
@@ -65,12 +67,12 @@ export default function CallsPage() {
 
   async function handleDelete(id: string) {
     const res = await fetch(`/api/call-rooms/${id}`, { method: "DELETE" })
-    if (res.ok) { fetchRooms(); toast.success("Room dihapus") }
+    if (res.ok) { fetchRooms(); toast.success(t("calls.roomDeleted")) }
   }
 
   async function handleCopyLink(room: CallRoom) {
     await navigator.clipboard.writeText(`https://meet.richardtandean.my.id/${room.roomName}`)
-    toast.success("Link Jitsi disalin")
+    toast.success(t("calls.linkCopied"))
   }
 
   if (activeRoom) {
@@ -79,15 +81,15 @@ export default function CallsPage() {
         <div className="flex items-center gap-3 px-4 py-2 border-b bg-muted/30">
           <span className="text-sm font-medium truncate">
             {activeRoom.type === "office" ? "🟢 Office" :
-             activeRoom.type === "meeting" ? "📢 Full Meeting" : `📞 ${activeRoom.name}`}
+             activeRoom.type === "meeting" ? `📢 ${t("calls.fullMeeting")}` : `📞 ${activeRoom.name}`}
           </span>
           <button onClick={() => setActiveRoom(null)}
             className="ml-auto text-xs text-muted-foreground hover:text-foreground underline">
-            Tutup call
+            {t("calls.closeCall")}
           </button>
         </div>
         <div className="flex-1">
-          <JitsiRoom roomName={activeRoom.roomName} displayName={user?.name || "User"}
+          <JitsiRoom roomName={activeRoom.roomName} displayName={user?.name || t("calls.userFallback")}
             roomId={activeRoom.id} onLeft={() => { setActiveRoom(null); fetchRooms() }} />
         </div>
       </div>
@@ -101,8 +103,8 @@ export default function CallsPage() {
 
   return (
     <div className="space-y-8">
-      <PageHeader eyebrow="Collaborate" title="Calls"
-        description="Full meeting, breakout rooms, dan direct calls." />
+      <PageHeader eyebrow={t("calls.title")} title={t("nav.calls")}
+        description={t("calls.desc")} />
 
       {/* Section 1: Full Meeting */}
       <section className="rounded-lg border border-line bg-surface">
@@ -112,8 +114,8 @@ export default function CallsPage() {
               <Megaphone className="size-4 text-purple-600" />
             </div>
             <div>
-              <h3 className="text-sm font-semibold">Full Meeting</h3>
-              <p className="text-[11px] text-muted-foreground">Meeting dengan seluruh tim — semua user otomatis diundang</p>
+              <h3 className="text-sm font-semibold">{t("calls.fullMeeting")}</h3>
+              <p className="text-[11px] text-muted-foreground">{t("calls.fullMeetingDesc")}</p>
             </div>
           </div>
           {canCreateMeeting && (
@@ -128,8 +130,8 @@ export default function CallsPage() {
         ) : meetings.length === 0 ? (
           <div className="p-8 text-center text-sm text-muted-foreground">
             {canCreateMeeting
-              ? "Belum ada meeting. Klik 'Buat Meeting' untuk memulai."
-              : "Belum ada meeting terjadwal."}
+              ? t("calls.noMeeting")
+              : t("calls.noMeetingScheduled")}
           </div>
         ) : (
           <div className="divide-y divide-line">
@@ -149,8 +151,8 @@ export default function CallsPage() {
               <Users className="size-4 text-blue-600" />
             </div>
             <div>
-              <h3 className="text-sm font-semibold">Breakout Rooms</h3>
-              <p className="text-[11px] text-muted-foreground">Group call — open untuk semua atau invite user tertentu</p>
+              <h3 className="text-sm font-semibold">{t("calls.breakoutRooms")}</h3>
+              <p className="text-[11px] text-muted-foreground">{t("calls.breakoutRoomsDesc")}</p>
             </div>
           </div>
           <CreateRoomDialog type="breakout" onCreated={fetchRooms} user={user!} />
@@ -162,7 +164,7 @@ export default function CallsPage() {
           </div>
         ) : breakoutRooms.length === 0 ? (
           <div className="p-8 text-center text-sm text-muted-foreground">
-            Belum ada breakout room. Buat room untuk diskusi grup.
+            {t("calls.noBreakout")}
           </div>
         ) : (
           <div className="divide-y divide-line">
@@ -182,8 +184,8 @@ export default function CallsPage() {
               <Phone className="size-4 text-amber-600" />
             </div>
             <div>
-              <h3 className="text-sm font-semibold">Direct Calls</h3>
-              <p className="text-[11px] text-muted-foreground">Panggil satu orang langsung — private, hanya kalian berdua</p>
+              <h3 className="text-sm font-semibold">{t("calls.directCalls")}</h3>
+              <p className="text-[11px] text-muted-foreground">{t("calls.directCallsDesc")}</p>
             </div>
           </div>
           <DirectCallDialog onCreated={fetchRooms} user={user!} />
@@ -195,7 +197,7 @@ export default function CallsPage() {
           </div>
         ) : privateRooms.length === 0 ? (
           <div className="p-8 text-center text-sm text-muted-foreground">
-            Belum ada direct call. Panggil seseorang untuk diskusi 1-on-1.
+            {t("calls.noDirectCall")}
           </div>
         ) : (
           <div className="divide-y divide-line">
@@ -207,18 +209,18 @@ export default function CallsPage() {
         )}
       </section>
 
-      {/* Office Call (always visible at bottom) */}
+      {/* Office Call */}
       {office && (
         <div className="flex items-center justify-between rounded-lg border border-green-200 bg-green-50 dark:bg-green-950 px-5 py-3">
           <div className="flex items-center gap-3">
             <div className="size-2.5 rounded-full bg-green-500 animate-pulse" />
-            <span className="text-sm font-medium">Office Call — selalu tersedia</span>
+            <span className="text-sm font-medium">{t("calls.officeCall")}</span>
             {office._count.participants > 0 && (
-              <Badge variant="secondary" className="text-[10px]">{office._count.participants} di room</Badge>
+              <Badge variant="secondary" className="text-[10px]">{t("calls.inRoom", { n: office._count.participants })}</Badge>
             )}
           </div>
           <Button size="sm" variant="outline" className="gap-1" onClick={() => setActiveRoom(office)}>
-            <Phone className="h-3 w-3" /> Join
+            <Phone className="h-3 w-3" /> {t("calls.join")}
           </Button>
         </div>
       )}
@@ -233,6 +235,7 @@ function RoomRow({
   room: CallRoom; userId?: string; onJoin: (r: CallRoom) => void
   onDelete: (id: string) => void; onCopy: (r: CallRoom) => void; showInvolve?: boolean
 }) {
+  const cs = useTranslations("calls")
   const typeIcon = room.type === "meeting" ? <Megaphone className="h-4 w-4 text-purple-500 shrink-0" />
     : room.type === "private" ? <Lock className="h-4 w-4 text-muted-foreground shrink-0" />
       : <Users className="h-4 w-4 text-muted-foreground shrink-0" />
@@ -243,13 +246,13 @@ function RoomRow({
       <div className="flex-1 min-w-0">
         <p className="text-[13px] font-medium truncate">{room.name}</p>
         <p className="text-[11px] text-muted-foreground">
-          oleh {room.creator.name}
-          {room._count.participants > 0 && ` · ${room._count.participants} peserta`}
-          {room.invites && room.invites.length > 0 && ` · ${room.invites.length} diundang`}
+          {cs("byUser", { name: room.creator.name })}
+          {room._count.participants > 0 && ` · ${cs("participants", { n: room._count.participants })}`}
+          {room.invites && room.invites.length > 0 && ` · ${cs("invited", { n: room.invites.length })}`}
         </p>
         {showInvolve && room.invites && (
           <p className="text-[10px] text-purple-500 mt-0.5">
-            Mengundang semua team member
+            {cs("invitingAll")}
           </p>
         )}
       </div>
@@ -258,7 +261,7 @@ function RoomRow({
           <Copy className="h-3 w-3" />
         </Button>
         <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => onJoin(room)}>
-          <Phone className="h-3 w-3" /> Join
+          <Phone className="h-3 w-3" /> {cs("join")}
         </Button>
         {room.createdBy === userId && room.type !== "office" && (
           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onDelete(room.id)}>
@@ -272,6 +275,7 @@ function RoomRow({
 
 /* ── Create Meeting Dialog ── */
 function CreateMeetingDialog({ onCreated, user }: { onCreated: () => void; user: { id: string; name: string } }) {
+  const t = useTranslations()
   const [open, setOpen] = useState(false)
   const [name, setName] = useState("")
   const [loading, setLoading] = useState(false)
@@ -286,12 +290,12 @@ function CreateMeetingDialog({ onCreated, user }: { onCreated: () => void; user:
         body: JSON.stringify({ name: name.trim(), type: "meeting" }),
       })
       if (res.ok) {
-        toast.success("Meeting dibuat — semua user diundang!")
+        toast.success(t("calls.meetingCreated"))
         onCreated()
         setOpen(false)
         setName("")
       }
-    } catch { toast.error("Gagal membuat meeting") }
+    } catch { toast.error(t("calls.meetingFailed")) }
     finally { setLoading(false) }
   }
 
@@ -301,20 +305,20 @@ function CreateMeetingDialog({ onCreated, user }: { onCreated: () => void; user:
         <DialogHeader>
           <DialogTitle className="text-base flex items-center gap-2">
             <Megaphone className="size-4 text-purple-600" />
-            Buat Full Meeting
+            {t("calls.createMeeting")}
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-1">
-            <Label className="text-xs">Nama Meeting</Label>
+            <Label className="text-xs">{t("calls.meetingName")}</Label>
             <Input value={name} onChange={(e) => setName(e.target.value)}
-              placeholder="Weekly Sync" autoFocus />
+              placeholder={t("calls.meetingPlaceholder")} autoFocus />
           </div>
           <div className="rounded-lg bg-purple-50 dark:bg-purple-950 p-3 text-xs text-purple-700 dark:text-purple-300">
-            Semua user di platform ini akan otomatis diundang ke meeting.
+            {t("calls.meetingInfo")}
           </div>
           <Button onClick={handleCreate} disabled={loading || !name.trim()} className="w-full gap-1">
-            <Megaphone className="h-3 w-3" /> Buat Meeting
+            <Megaphone className="h-3 w-3" /> {t("calls.createBtn")}
           </Button>
         </div>
       </DialogContent>
@@ -324,6 +328,7 @@ function CreateMeetingDialog({ onCreated, user }: { onCreated: () => void; user:
 
 /* ── Create Room Dialog (Breakout) ── */
 function CreateRoomDialog({ type, onCreated, user }: { type: "breakout"; onCreated: () => void; user: { id: string; name: string } }) {
+  const t = useTranslations()
   const [open, setOpen] = useState(false)
   const [name, setName] = useState("")
   const [isPrivate, setIsPrivate] = useState(false)
@@ -342,50 +347,51 @@ function CreateRoomDialog({ type, onCreated, user }: { type: "breakout"; onCreat
         }),
       })
       if (res.ok) {
-        toast.success(isPrivate ? "Room private dibuat" : "Room breakout dibuat")
+        toast.success(t("calls.roomCreated", { type: isPrivate ? t("calls.private") : t("calls.open") }))
         onCreated()
         setOpen(false)
         setName("")
       }
-    } catch { toast.error("Gagal membuat room") }
+    } catch { toast.error(t("calls.roomFailed")) }
     finally { setLoading(false) }
   }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <Button size="sm" variant="outline" className="gap-1" onClick={() => setOpen(true)}>
-        <Plus className="h-3 w-3" /> Buat Room
+        <Plus className="h-3 w-3" /> {t("calls.createRoom")}
       </Button>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-base flex items-center gap-2">
             <Users className="size-4 text-blue-600" />
-            Buat Breakout Room
+            {t("calls.createBreakout")}
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-1">
-            <Label className="text-xs">Nama Room</Label>
+            <Label className="text-xs">{t("calls.roomName")}</Label>
             <Input value={name} onChange={(e) => setName(e.target.value)}
-              placeholder="Review Video Baru" autoFocus />
+              placeholder={t("calls.roomPlaceholder")} autoFocus />
           </div>
           <div className="flex gap-2">
             <Button variant={!isPrivate ? "default" : "outline"} size="sm" className="flex-1 gap-1"
               onClick={() => setIsPrivate(false)}>
-              <Users className="h-3 w-3" /> Open
+              <Users className="h-3 w-3" /> {t("calls.open")}
             </Button>
             <Button variant={isPrivate ? "default" : "outline"} size="sm" className="flex-1 gap-1"
               onClick={() => setIsPrivate(true)}>
-              <Lock className="h-3 w-3" /> Private
+              <Lock className="h-3 w-3" /> {t("calls.private")}
             </Button>
           </div>
           <p className="text-[10px] text-muted-foreground">
             {isPrivate
-              ? "Hanya kamu yang bisa join. Bagikan link ke orang lain."
-              : "Semua orang bisa lihat dan join room ini."}
+              ? t("calls.privateInfo")
+              : t("calls.openInfo")}
           </p>
           <Button onClick={handleCreate} disabled={loading || !name.trim()} className="w-full gap-1">
-            <Plus className="h-3 w-3" /> Buat {isPrivate ? "Private" : "Breakout"}
+            <Plus className="h-3 w-3" />{" "}
+            {isPrivate ? t("calls.createRoom") : t("calls.createBreakout")}
           </Button>
         </div>
       </DialogContent>
@@ -395,6 +401,7 @@ function CreateRoomDialog({ type, onCreated, user }: { type: "breakout"; onCreat
 
 /* ── Direct Call Dialog ── */
 function DirectCallDialog({ onCreated, user }: { onCreated: () => void; user: { id: string; name: string } }) {
+  const t = useTranslations()
   const [open, setOpen] = useState(false)
   const [name, setName] = useState("")
   const [loading, setLoading] = useState(false)
@@ -412,38 +419,38 @@ function DirectCallDialog({ onCreated, user }: { onCreated: () => void; user: { 
         }),
       })
       if (res.ok) {
-        toast.success("Direct call room dibuat")
+        toast.success(t("calls.directCallCreated"))
         onCreated()
         setOpen(false)
         setName("")
       }
-    } catch { toast.error("Gagal membuat room") }
+    } catch { toast.error(t("calls.callFailed")) }
     finally { setLoading(false) }
   }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <Button size="sm" variant="outline" className="gap-1" onClick={() => setOpen(true)}>
-        <UserPlus className="h-3 w-3" /> Panggil
+        <UserPlus className="h-3 w-3" /> {t("calls.createRoom")}
       </Button>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-base flex items-center gap-2">
             <Phone className="size-4 text-amber-600" />
-            Direct Call
+            {t("calls.directCall")}
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-1">
-            <Label className="text-xs">Nama Panggilan</Label>
+            <Label className="text-xs">{t("calls.callName")}</Label>
             <Input value={name} onChange={(e) => setName(e.target.value)}
-              placeholder="Panggil Budi" autoFocus />
+              placeholder={t("calls.callPlaceholder")} autoFocus />
           </div>
           <div className="rounded-lg bg-amber-50 dark:bg-amber-950 p-3 text-xs text-amber-700 dark:text-amber-300">
-            Room private — bagikan link ke orang yang ingin kamu panggil. Hanya kamu yang bisa menghapus room ini.
+            {t("calls.privateRoomInfo")}
           </div>
           <Button onClick={handleCreate} disabled={loading || !name.trim()} className="w-full gap-1">
-            <Phone className="h-3 w-3" /> Buat Panggilan
+            <Phone className="h-3 w-3" /> {t("calls.createCallBtn")}
           </Button>
         </div>
       </DialogContent>

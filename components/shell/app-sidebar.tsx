@@ -1,9 +1,8 @@
 "use client"
 
-import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { Link, usePathname } from "@/i18n/navigation"
 import { cn } from "@/lib/utils"
-import { Role, navFor, roleLabel, homeFor } from "./nav-config"
+import { Role, useNavigation, homeFor } from "./nav-config"
 import { ThemeToggle } from "./theme-toggle"
 import { useEffect, useRef, useState } from "react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -21,6 +20,7 @@ import { logout } from "@/auth"
 import { useNotifications } from "@/components/notifications/use-notifications"
 import { ChangePasswordDialog } from "./change-password-dialog"
 import { LocaleSwitcher } from "@/components/locale-switcher"
+import { useTranslations } from "next-intl"
 
 interface AppSidebarProps {
   user: { id: string; name: string; email: string; role: string }
@@ -29,9 +29,10 @@ interface AppSidebarProps {
 }
 
 export function AppSidebar({ user, collapsed, onToggleCollapse }: AppSidebarProps) {
+  const t = useTranslations()
   const pathname = usePathname()
   const role = (user.role as Role) || "Editor"
-  const sections = navFor(role)
+  const { sections } = useNavigation(role)
   const initials = user.name
     .split(" ")
     .filter(Boolean)
@@ -71,10 +72,10 @@ export function AppSidebar({ user, collapsed, onToggleCollapse }: AppSidebarProp
           {!collapsed && (
             <div className="min-w-0">
               <div className="font-display italic text-[16px] leading-none text-ink truncate">
-                Lejel
+                {t("nav.lejel")}
               </div>
               <div className="text-[9px] font-medium uppercase tracking-[0.2em] text-ink-muted mt-0.5">
-                WFH Studio
+                {t("nav.wfhStudio")}
               </div>
             </div>
           )}
@@ -84,7 +85,7 @@ export function AppSidebar({ user, collapsed, onToggleCollapse }: AppSidebarProp
             type="button"
             onClick={onToggleCollapse}
             className="ml-auto inline-flex size-6 items-center justify-center rounded-xs text-ink-muted hover:text-ink hover:bg-elevated transition-colors"
-            aria-label="Collapse sidebar"
+            aria-label={t("nav.collapse")}
           >
             <PanelLeft className="size-3.5" />
           </button>
@@ -150,7 +151,7 @@ export function AppSidebar({ user, collapsed, onToggleCollapse }: AppSidebarProp
                     {user.name}
                   </div>
                   <div className="text-[10px] text-ink-muted truncate">
-                    {roleLabel[role]}
+                    {t(`roles.${role}` as any)}
                   </div>
                 </div>
                 <ChevronsUpDown className="size-3 text-ink-muted shrink-0" />
@@ -163,12 +164,12 @@ export function AppSidebar({ user, collapsed, onToggleCollapse }: AppSidebarProp
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => setPwDialogOpen(true)}>
                 <KeyRound className="size-3.5" />
-                Ganti Password
+                {t("nav.changePassword")}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem variant="destructive" onClick={() => logout()}>
                 <LogOut className="size-3.5" />
-                Keluar
+                {t("nav.signOut")}
               </DropdownMenuItem>
             </DropdownMenuGroup>
           </DropdownMenuContent>
@@ -179,7 +180,7 @@ export function AppSidebar({ user, collapsed, onToggleCollapse }: AppSidebarProp
             type="button"
             onClick={onToggleCollapse}
             className="w-full inline-flex h-8 items-center justify-center rounded-xs text-ink-muted hover:text-ink hover:bg-elevated transition-colors"
-            aria-label="Expand sidebar"
+            aria-label={t("nav.expand")}
           >
             <PanelLeft className="size-3.5 rotate-180" />
           </button>
@@ -245,9 +246,10 @@ interface MobileSidebarProps {
 }
 
 export function MobileSidebar({ user, open, onClose }: MobileSidebarProps) {
+  const t = useTranslations()
   const pathname = usePathname()
   const role = (user.role as Role) || "Editor"
-  const sections = navFor(role)
+  const { sections } = useNavigation(role)
   const initials = user.name
     .split(" ")
     .filter(Boolean)
@@ -284,10 +286,10 @@ export function MobileSidebar({ user, open, onClose }: MobileSidebarProps) {
           </div>
           <div>
             <div className="font-display italic text-[16px] leading-none text-ink">
-              Lejel
+              {t("nav.lejel")}
             </div>
             <div className="text-[9px] font-medium uppercase tracking-[0.2em] text-ink-muted mt-0.5">
-              WFH Studio
+              {t("nav.wfhStudio")}
             </div>
           </div>
         </div>
@@ -353,12 +355,12 @@ export function MobileSidebar({ user, open, onClose }: MobileSidebarProps) {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => setPwDialogOpen(true)}>
                   <KeyRound className="size-3.5" />
-                  Ganti Password
+                  {t("nav.changePassword")}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem variant="destructive" onClick={() => logout()}>
                   <LogOut className="size-3.5" />
-                  Keluar
+                  {t("nav.signOut")}
                 </DropdownMenuItem>
               </DropdownMenuGroup>
             </DropdownMenuContent>
@@ -371,4 +373,3 @@ export function MobileSidebar({ user, open, onClose }: MobileSidebarProps) {
     </div>
   )
 }
-

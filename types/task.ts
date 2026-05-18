@@ -43,7 +43,18 @@ export interface ProgressUpdateItem {
   user: { id: string; name: string }
 }
 
-export const statusLabels: Record<string, string> = {
+export const STATUS_LABEL_KEYS: Record<TaskStatus, string> = {
+  Assigned: "tasks.status.Assigned",
+  Editing: "tasks.status.Editing",
+  OnHold: "tasks.status.OnHold",
+  NeedToBeReviewed: "tasks.status.NeedToBeReviewed",
+  Review: "tasks.status.Review",
+  Revise: "tasks.status.Revise",
+  ReadyToUpload: "tasks.status.ReadyToUpload",
+  Completed: "tasks.status.Completed",
+}
+
+export const statusLabels: Record<TaskStatus | string, string> = {
   Assigned: "Ditugaskan",
   Editing: "Dikerjakan",
   OnHold: "On Hold",

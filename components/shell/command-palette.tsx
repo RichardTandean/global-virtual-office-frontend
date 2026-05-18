@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react"
 import { Command } from "cmdk"
-import { useRouter } from "next/navigation"
+import { useRouter } from "@/i18n/navigation"
 import { useTheme } from "next-themes"
 import {
   LayoutDashboard,
@@ -18,6 +18,7 @@ import {
 import { Role, homeFor } from "./nav-config"
 import { Kbd } from "@/components/ui/kbd"
 import { logout } from "@/auth"
+import { useTranslations } from "next-intl"
 
 interface CommandPaletteProps {
   open: boolean
@@ -33,6 +34,7 @@ interface TaskHit {
 }
 
 export function CommandPalette({ open, onOpenChange, user }: CommandPaletteProps) {
+  const t = useTranslations()
   const router = useRouter()
   const { setTheme, theme } = useTheme()
   const [search, setSearch] = useState("")
@@ -98,13 +100,13 @@ export function CommandPalette({ open, onOpenChange, user }: CommandPaletteProps
         aria-hidden
       />
       <div className="relative w-full max-w-xl rounded-md border border-line bg-elevated shadow-lg overflow-hidden animate-in fade-in-0 zoom-in-95 duration-(--dur-base)">
-        <Command label="Command palette" shouldFilter className="flex flex-col max-h-[480px]">
+        <Command label={t("commandPalette.label")} shouldFilter className="flex flex-col max-h-[480px]">
           <div className="flex items-center gap-2 px-4 border-b border-line h-12">
             <Search className="size-4 text-ink-muted" />
             <Command.Input
               value={search}
               onValueChange={setSearch}
-              placeholder="Search tasks, navigate, change theme…"
+              placeholder={t("commandPalette.placeholder")}
               className="flex-1 bg-transparent outline-none text-[13px] text-ink placeholder:text-ink-muted h-full"
               autoFocus
             />
@@ -113,45 +115,45 @@ export function CommandPalette({ open, onOpenChange, user }: CommandPaletteProps
 
           <Command.List className="overflow-y-auto p-2">
             <Command.Empty className="py-10 text-center text-[12px] text-ink-muted">
-              No matches.
+              {t("commandPalette.noMatches")}
             </Command.Empty>
 
             <Command.Group
-              heading="Navigation"
+              heading={t("commandPalette.navigation")}
               className="text-[9px] uppercase tracking-[0.2em] text-ink-muted px-2 pb-1 pt-2"
             >
               <CommandRow
                 onSelect={() => go(homeFor(role))}
                 icon={<LayoutDashboard className="size-3.5" />}
-                label="Go to Dashboard"
+                label={t("commandPalette.goToDashboard")}
               />
               <CommandRow
                 onSelect={() => go(tasksHref)}
                 icon={<ListChecks className="size-3.5" />}
-                label="View all Tasks"
+                label={t("commandPalette.viewAllTasks")}
               />
               <CommandRow
                 onSelect={() => go(calendarHref)}
                 icon={<CalendarDays className="size-3.5" />}
-                label="Open Calendar"
+                label={t("commandPalette.openCalendar")}
               />
               <CommandRow
                 onSelect={() => go("/dashboard/notifications")}
                 icon={<Bell className="size-3.5" />}
-                label="Notifications"
+                label={t("commandPalette.notifications")}
               />
               {role === "Admin" && (
                 <CommandRow
                   onSelect={() => go("/dashboard/admin/reports")}
                   icon={<BarChart3 className="size-3.5" />}
-                  label="Reports"
+                  label={t("commandPalette.reports")}
                 />
               )}
             </Command.Group>
 
             {tasks.length > 0 && (
               <Command.Group
-                heading="Tasks"
+                heading={t("commandPalette.tasks")}
                 className="text-[9px] uppercase tracking-[0.2em] text-ink-muted px-2 pb-1 pt-3"
               >
                 {tasks.map((t) => (
@@ -176,7 +178,7 @@ export function CommandPalette({ open, onOpenChange, user }: CommandPaletteProps
             )}
 
             <Command.Group
-              heading="Settings"
+              heading={t("commandPalette.settings")}
               className="text-[9px] uppercase tracking-[0.2em] text-ink-muted px-2 pb-1 pt-3"
             >
               <CommandRow
@@ -191,13 +193,15 @@ export function CommandPalette({ open, onOpenChange, user }: CommandPaletteProps
                   )
                 }
                 label={
-                  theme === "light" ? "Switch to Dark mode" : "Switch to Light mode"
+                  theme === "light"
+                    ? t("commandPalette.switchToDark")
+                    : t("commandPalette.switchToLight")
                 }
               />
               <CommandRow
                 onSelect={() => logout()}
                 icon={<LogOut className="size-3.5" />}
-                label="Sign out"
+                label={t("commandPalette.signOut")}
                 tone="danger"
               />
             </Command.Group>
@@ -207,11 +211,11 @@ export function CommandPalette({ open, onOpenChange, user }: CommandPaletteProps
             <span className="inline-flex items-center gap-1.5">
               <Kbd>↑</Kbd>
               <Kbd>↓</Kbd>
-              navigate
+              {t("commandPalette.navigate")}
             </span>
             <span className="inline-flex items-center gap-1.5">
               <Kbd>↵</Kbd>
-              select
+              {t("commandPalette.select")}
             </span>
           </div>
         </Command>

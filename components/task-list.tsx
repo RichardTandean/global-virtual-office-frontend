@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useMemo } from "react"
+import { useTranslations } from "next-intl"
 import { TaskItem } from "@/types/task"
 import { Input } from "@/components/ui/input"
 import {
@@ -22,29 +23,42 @@ interface TaskListProps {
   userRole?: string
 }
 
-const filterOptions = [
-  { value: "Semua", label: "All" },
-  { value: "Assigned", label: "Assigned" },
-  { value: "Editing", label: "Editing" },
-  { value: "OnHold", label: "On Hold" },
-  { value: "NeedToBeReviewed", label: "Need Review" },
-  { value: "Review", label: "Review" },
-  { value: "Revise", label: "Revise" },
-  { value: "ReadyToUpload", label: "Ready" },
-  { value: "Completed", label: "Done" },
-]
-
-type SortKey = "created" | "deadline" | "progress" | "title"
-
 export default function TaskList({
   tasks,
   onUpdated,
   canCreate,
   userRole,
 }: TaskListProps) {
+  const t = useTranslations()
   const [activeFilter, setActiveFilter] = useState("Semua")
   const [search, setSearch] = useState("")
   const [sortBy, setSortBy] = useState<SortKey>("created")
+
+  const filterOptions = [
+    { value: "Semua", key: "all" as const },
+    { value: "Assigned", key: "status" as const },
+    { value: "Editing", key: "status" as const },
+    { value: "OnHold", key: "status" as const },
+    { value: "NeedToBeReviewed", key: "status" as const },
+    { value: "Review", key: "status" as const },
+    { value: "Revise", key: "status" as const },
+    { value: "ReadyToUpload", key: "status" as const },
+    { value: "Completed", key: "status" as const },
+  ]
+
+  const filterLabels: Record<string, string> = {
+    Semua: t("notifications.all"),
+    Assigned: t("tasks.status.Assigned"),
+    Editing: t("tasks.status.Editing"),
+    OnHold: t("tasks.status.OnHold"),
+    NeedToBeReviewed: t("tasks.status.NeedToBeReviewed"),
+    Review: t("tasks.status.Review"),
+    Revise: t("tasks.status.Revise"),
+    ReadyToUpload: t("tasks.status.ReadyToUpload"),
+    Completed: t("tasks.status.Completed"),
+  }
+
+  type SortKey = "created" | "deadline" | "progress" | "title"
 
   const { filtered, counts } = useMemo(() => {
     const counts: Record<string, number> = {}
@@ -100,7 +114,7 @@ export default function TaskList({
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-ink-muted pointer-events-none" />
           <Input
-            placeholder="Cari task atau editor..."
+            placeholder={t("tasks.list.searchPlaceholder")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-9"
@@ -112,10 +126,10 @@ export default function TaskList({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="created">Terbaru</SelectItem>
-            <SelectItem value="deadline">Deadline</SelectItem>
-            <SelectItem value="progress">Progress</SelectItem>
-            <SelectItem value="title">Judul</SelectItem>
+            <SelectItem value="created">{t("tasks.list.sortNewest")}</SelectItem>
+            <SelectItem value="deadline">{t("tasks.list.sortDeadline")}</SelectItem>
+            <SelectItem value="progress">{t("tasks.list.sortProgress")}</SelectItem>
+            <SelectItem value="title">{t("tasks.list.sortTitle")}</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -139,7 +153,7 @@ export default function TaskList({
                 count === 0 && !active && "opacity-50"
               )}
             >
-              {f.label}
+              {filterLabels[f.value]}
               {count > 0 && (
                 <span
                   className={cn(
@@ -158,13 +172,13 @@ export default function TaskList({
       {filtered.length === 0 ? (
         <EmptyState
           icon={<ListChecks />}
-          title={search ? "Tidak ada hasil" : "Belum ada task"}
+          title={search ? t("tasks.list.noResults") : t("tasks.list.noTasksYet")}
           description={
             search
-              ? "Coba kata kunci lain atau ganti filter."
+              ? t("tasks.list.noResultsDesc")
               : canCreate
-              ? "Buat task pertama untuk memulai."
-              : "Task akan muncul di sini ketika diberikan oleh tim."
+              ? t("tasks.list.noTasksDesc")
+              : t("tasks.list.tasksAppear")
           }
           size="sm"
         />

@@ -1,5 +1,6 @@
 import { requireRole } from "@/lib/auth-helpers"
 import { fetchBackend } from "@/lib/session"
+import { getTranslations } from "next-intl/server"
 import { PageHeader } from "@/components/shell/page-header"
 import { StatCard } from "@/components/ui/stat-card"
 import { StatusPill } from "@/components/ui/status-pill"
@@ -48,6 +49,7 @@ function daysSince(date: string) {
 
 export default async function AdminDashboard() {
   const session = await requireRole("Admin")
+  const t = await getTranslations()
 
   const [usersRes, logsRes, tasksRes] = await Promise.all([
     fetchBackend("/users"),
@@ -67,7 +69,6 @@ export default async function AdminDashboard() {
     todayLogs.filter((l) => !l.clockOut).map((l) => l.userId)
   )
 
-  // Today's totals
   const totalMinutesToday = todayLogs.reduce(
     (s, l) => s + (l.durationMinutes || 0),
     0
@@ -94,7 +95,6 @@ export default async function AdminDashboard() {
     return sum + videos.filter((v) => v.status === "Pending").length
   }, 0)
 
-  // Bottleneck: tasks not completed and stale > 3 days since createdAt (proxy for last-change)
   const atRiskTasks = tasks
     .filter((t) => t.status !== "Completed")
     .map((t) => ({ ...t, _days: daysSince(t.createdAt) }))
@@ -102,7 +102,6 @@ export default async function AdminDashboard() {
     .sort((a, b) => b._days - a._days)
     .slice(0, 6)
 
-  // Distribution data
   const distribution = [
     { label: "Assigned", value: taskCounts.assigned, status: "Assigned" },
     { label: "Editing", value: taskCounts.editing, status: "Editing" },
@@ -117,44 +116,42 @@ export default async function AdminDashboard() {
   return (
     <div className="space-y-10">
       <PageHeader
-        eyebrow="Admin"
-        title="Overview"
-        description="Visibilitas penuh untuk status tim, pipeline task, dan bottleneck."
+        eyebrow={t("roles.Admin")}
+        title={t("admin.overview")}
+        description={t("admin.overviewDesc")}
       />
 
-      {/* KPI tiles */}
       <section className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          label="Active tasks"
+          label={t("admin.activeTasks")}
           value={activeTasks}
           icon={<ListChecks />}
         />
         <StatCard
-          label="Team online"
+          label={t("admin.teamOnline")}
           value={clockedInUserIds.size}
           suffix={`/ ${users.length}`}
           icon={<Activity />}
           tone={clockedInUserIds.size > 0 ? "success" : "default"}
         />
         <StatCard
-          label="Jam tim hari ini"
+          label={t("admin.teamHours")}
           value={teamHoursToday}
-          suffix="hrs"
+          suffix={t("admin.hrs")}
           icon={<TrendingUp />}
         />
         <StatCard
-          label="At-risk tasks"
+          label={t("admin.atRiskTasks")}
           value={atRiskTasks.length}
           icon={<AlertTriangle />}
           tone={atRiskTasks.length > 0 ? "danger" : "default"}
         />
       </section>
 
-      {/* Pipeline distribution + mini chart */}
       {taskCounts.total > 0 && (
         <section className="space-y-4">
           <h2 className="text-[11px] font-medium uppercase tracking-[0.2em] text-ink-muted">
-            Pipeline
+            {t("admin.pipeline")}
           </h2>
           <div className="rounded-md border border-line bg-surface p-5 space-y-5">
             <MiniBar data={distribution} height={140} showAxis />
@@ -172,41 +169,40 @@ export default async function AdminDashboard() {
         </section>
       )}
 
-      {/* Bottlenecks */}
       {atRiskTasks.length > 0 && (
         <section className="space-y-4">
           <div className="flex items-end justify-between">
             <h2 className="text-[11px] font-medium uppercase tracking-[0.2em] text-ink-muted">
-              Bottleneck tasks
+              {t("admin.bottleneckTasks")}
             </h2>
             <p className="font-mono text-[11px] tabular-nums text-ink-muted">
-              {atRiskTasks.length} tasks
+              {t("admin.tasksCount", { n: atRiskTasks.length })}
             </p>
           </div>
           <div className="rounded-md border border-line bg-surface divide-y divide-line">
-            {atRiskTasks.map((t) => (
+            {atRiskTasks.map((task) => (
               <div
-                key={t.id}
+                key={task.id}
                 className="flex items-center gap-4 px-5 py-3.5"
               >
                 <span
                   className={
-                    t._days >= 7
+                    task._days >= 7
                       ? "size-1.5 rounded-full bg-status-danger shrink-0"
                       : "size-1.5 rounded-full bg-status-on-hold shrink-0"
                   }
                 />
                 <div className="min-w-0 flex-1">
                   <p className="text-[13px] font-medium text-ink truncate">
-                    {t.title}
+                    {task.title}
                   </p>
                   <p className="text-[11px] text-ink-muted">
-                    {t.assignee?.name || "—"}
+                    {task.assignee?.name || "—"}
                   </p>
                 </div>
-                <StatusPill status={t.status} size="sm" />
+                <StatusPill status={task.status} size="sm" />
                 <span className="font-mono text-[11px] tabular-nums text-ink-secondary shrink-0 w-16 text-right">
-                  {t._days}h diam
+                  {t("admin.staleHours", { n: task._days })}
                 </span>
               </div>
             ))}
@@ -214,20 +210,19 @@ export default async function AdminDashboard() {
         </section>
       )}
 
-      {/* Team */}
       <section className="space-y-4">
         <h2 className="text-[11px] font-medium uppercase tracking-[0.2em] text-ink-muted">
-          Team
+          {t("admin.teamSection")}
         </h2>
         <div className="rounded-md border border-line bg-surface overflow-hidden">
           <table className="w-full text-[12px]">
             <thead className="bg-subtle/40 border-b border-line">
               <tr className="text-[10px] font-medium uppercase tracking-wider text-ink-muted">
-                <th className="text-left px-5 py-2.5 font-medium">Name</th>
-                <th className="text-left px-5 py-2.5 font-medium">Role</th>
-                <th className="text-right px-5 py-2.5 font-medium">Active</th>
-                <th className="text-right px-5 py-2.5 font-medium">Hrs today</th>
-                <th className="text-right px-5 py-2.5 font-medium">Status</th>
+                <th className="text-left px-5 py-2.5 font-medium">{t("admin.nameCol")}</th>
+                <th className="text-left px-5 py-2.5 font-medium">{t("admin.roleCol")}</th>
+                <th className="text-right px-5 py-2.5 font-medium">{t("admin.activeCol")}</th>
+                <th className="text-right px-5 py-2.5 font-medium">{t("admin.hrsTodayCol")}</th>
+                <th className="text-right px-5 py-2.5 font-medium">{t("admin.statusCol")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
@@ -251,10 +246,10 @@ export default async function AdminDashboard() {
                     <td className="px-5 py-3 text-ink-secondary">
                       <span className="text-[10px] font-medium uppercase tracking-wider px-1.5 py-0.5 rounded-xs border border-line">
                         {u.role === "Admin"
-                          ? "Admin"
+                          ? t("roles.Admin")
                           : u.role === "KoreaTeam"
-                          ? "Korea"
-                          : "Editor"}
+                          ? t("roles.KoreaTeam")
+                          : t("roles.Editor")}
                       </span>
                     </td>
                     <td className="px-5 py-3 text-right font-mono tabular-nums text-ink">
@@ -272,7 +267,7 @@ export default async function AdminDashboard() {
                               : "size-1.5 rounded-full bg-ink-muted/40"
                           }
                         />
-                        {online ? "Online" : "Offline"}
+                        {online ? t("admin.online") : t("admin.offline")}
                       </span>
                     </td>
                   </tr>
@@ -282,7 +277,7 @@ export default async function AdminDashboard() {
           </table>
           {users.length === 0 && (
             <p className="px-5 py-6 text-[12px] text-ink-muted text-center">
-              Belum ada user terdaftar.
+              {t("admin.noUsers")}
             </p>
           )}
         </div>

@@ -1,7 +1,7 @@
 "use client"
 
 import { usePathname, useRouter } from "@/i18n/navigation"
-import { useLocale } from "next-intl"
+import { useTranslations, useLocale } from "next-intl"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,6 +25,7 @@ const LOCALE_FLAGS: Record<string, string> = {
 }
 
 export function LocaleSwitcher({ className }: { className?: string }) {
+  const t = useTranslations()
   const locale = useLocale()
   const pathname = usePathname()
   const router = useRouter()
@@ -45,6 +46,7 @@ export function LocaleSwitcher({ className }: { className?: string }) {
           "inline-flex size-7 items-center justify-center rounded-xs text-ink-muted hover:text-ink hover:bg-elevated transition-colors",
           className,
         )}
+        aria-label={t("common.switchLanguage")}
       >
         <Globe className="size-3.5" />
       </DropdownMenuTrigger>

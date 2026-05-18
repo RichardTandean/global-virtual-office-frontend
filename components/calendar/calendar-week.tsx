@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react"
 import { ChevronLeft, ChevronRight, CalendarDays } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { StatusDot } from "@/components/ui/status-pill"
@@ -13,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { statusLabels, type TaskStatus } from "@/types/task"
+import { STATUS_LABEL_KEYS, type TaskStatus } from "@/types/task"
 
 export interface CalendarTask {
   id: string
@@ -42,22 +43,6 @@ interface CalendarWeekProps {
   onTaskClick?: (task: CalendarTask) => void
   onEventClick?: (event: CalendarEvent) => void
 }
-
-const DAY_LABELS = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"]
-const MONTH_LABELS = [
-  "Januari",
-  "Februari",
-  "Maret",
-  "April",
-  "Mei",
-  "Juni",
-  "Juli",
-  "Agustus",
-  "September",
-  "Oktober",
-  "November",
-  "Desember",
-]
 
 function startOfWeek(date: Date): Date {
   const d = new Date(date)
@@ -90,24 +75,28 @@ const EVENT_COLORS: Record<string, string> = {
   meeting: "bg-status-success/10 border-status-success/20 text-status-success",
 }
 
-function eventLabel(type: string) {
+function eventTypeKey(type: string): string {
   switch (type) {
-    case "holiday": return "Libur"
-    case "meeting": return "Meeting"
-    default: return "Event"
+    case "holiday": return "calendar.holiday"
+    case "meeting": return "calendar.meeting"
+    default: return "calendar.event"
   }
 }
 
 export function CalendarWeek({ tasks, events, role, onTaskClick, onEventClick }: CalendarWeekProps) {
+  const t = useTranslations()
   const [view, setView] = useState<"week" | "month">("week")
   const [anchor, setAnchor] = useState<Date>(() => new Date())
   const [statusFilter, setStatusFilter] = useState<string>("active")
   const [assigneeFilter, setAssigneeFilter] = useState<string>("all")
 
+  const dayLabels = useMemo(() => t("calendar.dayLabels") as unknown as string[], [t])
+  const monthLabels = useMemo(() => t("calendar.monthLabels") as unknown as string[], [t])
+
   const today = useMemo(() => {
-    const t = new Date()
-    t.setHours(0, 0, 0, 0)
-    return t
+    const d = new Date()
+    d.setHours(0, 0, 0, 0)
+    return d
   }, [])
 
   const assignees = useMemo(() => {
@@ -195,10 +184,8 @@ export function CalendarWeek({ tasks, events, role, onTaskClick, onEventClick }:
 
   const title =
     view === "week"
-      ? `${weekDays[0].getDate()} ${MONTH_LABELS[weekDays[0].getMonth()]} – ${
-          weekDays[6].getDate()
-        } ${MONTH_LABELS[weekDays[6].getMonth()]} ${weekDays[6].getFullYear()}`
-      : `${MONTH_LABELS[anchor.getMonth()]} ${anchor.getFullYear()}`
+      ? `${weekDays[0].getDate()} ${monthLabels[weekDays[0].getMonth()]} \u2013 ${weekDays[6].getDate()} ${monthLabels[weekDays[6].getMonth()]} ${weekDays[6].getFullYear()}`
+      : `${monthLabels[anchor.getMonth()]} ${anchor.getFullYear()}`
 
   return (
     <div className="space-y-5">
@@ -208,7 +195,7 @@ export function CalendarWeek({ tasks, events, role, onTaskClick, onEventClick }:
             variant="ghost"
             size="icon-sm"
             onClick={() => step(-1)}
-            aria-label="Previous"
+            aria-label={t("calendar.previous")}
           >
             <ChevronLeft className="size-4" />
           </Button>
@@ -219,7 +206,7 @@ export function CalendarWeek({ tasks, events, role, onTaskClick, onEventClick }:
             variant="ghost"
             size="icon-sm"
             onClick={() => step(1)}
-            aria-label="Next"
+            aria-label={t("calendar.next")}
           >
             <ChevronRight className="size-4" />
           </Button>
@@ -229,7 +216,7 @@ export function CalendarWeek({ tasks, events, role, onTaskClick, onEventClick }:
             className="ml-2"
             onClick={() => setAnchor(new Date())}
           >
-            Hari ini
+            {t("calendar.today")}
           </Button>
         </div>
 
@@ -240,10 +227,10 @@ export function CalendarWeek({ tasks, events, role, onTaskClick, onEventClick }:
               onValueChange={(v) => setAssigneeFilter(v ?? "all")}
             >
               <SelectTrigger size="sm" className="w-44">
-                <SelectValue placeholder="Semua editor" />
+                <SelectValue placeholder={t("calendar.allEditors")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Semua editor</SelectItem>
+                <SelectItem value="all">{t("calendar.allEditors")}</SelectItem>
                 {assignees.map((a) => (
                   <SelectItem key={a.id} value={a.id}>
                     {a.name}
@@ -257,14 +244,14 @@ export function CalendarWeek({ tasks, events, role, onTaskClick, onEventClick }:
             onValueChange={(v) => setStatusFilter(v ?? "active")}
           >
             <SelectTrigger size="sm" className="w-40">
-              <SelectValue placeholder="Status" />
+              <SelectValue placeholder={t("calendar.status")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="active">Aktif</SelectItem>
-              <SelectItem value="all">Semua status</SelectItem>
-              {Object.entries(statusLabels).map(([k, v]) => (
-                <SelectItem key={k} value={k}>
-                  {v}
+              <SelectItem value="active">{t("calendar.activeFilter")}</SelectItem>
+              <SelectItem value="all">{t("calendar.allStatuses")}</SelectItem>
+              {Object.entries(STATUS_LABEL_KEYS).map(([statusValue, key]) => (
+                <SelectItem key={statusValue} value={statusValue}>
+                  {t(key)}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -279,7 +266,7 @@ export function CalendarWeek({ tasks, events, role, onTaskClick, onEventClick }:
                   : "text-ink-secondary hover:text-ink",
               )}
             >
-              Minggu
+              {t("calendar.week")}
             </button>
             <button
               onClick={() => setView("month")}
@@ -290,7 +277,7 @@ export function CalendarWeek({ tasks, events, role, onTaskClick, onEventClick }:
                   : "text-ink-secondary hover:text-ink",
               )}
             >
-              Bulan
+              {t("calendar.month")}
             </button>
           </div>
         </div>
@@ -305,6 +292,7 @@ export function CalendarWeek({ tasks, events, role, onTaskClick, onEventClick }:
             eventsByDay={eventsByDay}
             onTaskClick={onTaskClick}
             onEventClick={onEventClick}
+            dayLabels={dayLabels}
           />
         ) : (
           <MonthGrid
@@ -315,6 +303,7 @@ export function CalendarWeek({ tasks, events, role, onTaskClick, onEventClick }:
             eventsByDay={eventsByDay}
             onTaskClick={onTaskClick}
             onEventClick={onEventClick}
+            dayLabels={dayLabels}
           />
         )}
       </div>
@@ -322,8 +311,8 @@ export function CalendarWeek({ tasks, events, role, onTaskClick, onEventClick }:
       {filteredTasks.length === 0 && (
         <EmptyState
           icon={<CalendarDays />}
-          title="Tidak ada deadline"
-          description="Tidak ada task dengan deadline pada rentang ini."
+          title={t("calendar.noDeadlines")}
+          description={t("calendar.noDeadlinesDesc")}
         />
       )}
     </div>
@@ -337,6 +326,7 @@ function WeekGrid({
   eventsByDay,
   onTaskClick,
   onEventClick,
+  dayLabels,
 }: {
   days: Date[]
   today: Date
@@ -344,7 +334,10 @@ function WeekGrid({
   eventsByDay: Map<string, CalendarEvent[]>
   onTaskClick?: (task: CalendarTask) => void
   onEventClick?: (event: CalendarEvent) => void
+  dayLabels: string[]
 }) {
+  const t = useTranslations()
+
   return (
     <div className="grid grid-cols-7 divide-x divide-line">
       {days.map((d, i) => {
@@ -362,7 +355,7 @@ function WeekGrid({
           >
             <div className="flex items-baseline justify-between">
               <span className="text-[10px] uppercase tracking-[0.18em] text-ink-muted">
-                {DAY_LABELS[i]}
+                {dayLabels[i]}
               </span>
               <span
                 className={cn(
@@ -384,7 +377,7 @@ function WeekGrid({
                     "rounded-xs border px-1.5 py-0.5 text-[10px] font-medium text-left truncate hover:opacity-80 transition-opacity",
                     EVENT_COLORS[e.type] || EVENT_COLORS.event,
                   )}
-                  title={`${eventLabel(e.type)}: ${e.title}`}
+                  title={`${t(eventTypeKey(e.type))}: ${e.title}`}
                 >
                   {e.title}
                 </button>
@@ -394,7 +387,7 @@ function WeekGrid({
                   key={t.id}
                   onClick={() => onTaskClick?.(t)}
                   className="group flex items-start gap-1.5 rounded-xs border border-line bg-canvas px-2 py-1.5 text-left hover:border-line-strong hover:bg-elevated transition-colors duration-(--dur-fast)"
-                  title={`${t.title} — ${t.assignee?.name ?? ""}`}
+                  title={`${t.title} \u2014 ${t.assignee?.name ?? ""}`}
                 >
                   <StatusDot
                     status={t.status as TaskStatus}
@@ -407,7 +400,7 @@ function WeekGrid({
               ))}
               {items.length > 6 && (
                 <span className="text-[10px] text-ink-muted">
-                  +{items.length - 6} lainnya
+                  {t("calendar.moreItems", { n: items.length - 6 })}
                 </span>
               )}
             </div>
@@ -426,6 +419,7 @@ function MonthGrid({
   eventsByDay,
   onTaskClick,
   onEventClick,
+  dayLabels,
 }: {
   days: Date[]
   anchor: Date
@@ -434,11 +428,14 @@ function MonthGrid({
   eventsByDay: Map<string, CalendarEvent[]>
   onTaskClick?: (task: CalendarTask) => void
   onEventClick?: (event: CalendarEvent) => void
+  dayLabels: string[]
 }) {
+  const t = useTranslations()
+
   return (
     <div>
       <div className="grid grid-cols-7 border-b border-line bg-subtle/30">
-        {DAY_LABELS.map((d) => (
+        {dayLabels.map((d) => (
           <div
             key={d}
             className="px-3 py-2 text-[10px] uppercase tracking-[0.18em] text-ink-muted"
@@ -480,7 +477,7 @@ function MonthGrid({
                       "rounded-xs px-1 py-0.5 text-[9px] font-medium text-left truncate hover:opacity-80 transition-opacity",
                       EVENT_COLORS[e.type] || EVENT_COLORS.event,
                     )}
-                    title={`${eventLabel(e.type)}: ${e.title}`}
+                    title={`${t(eventTypeKey(e.type))}: ${e.title}`}
                   >
                     {e.title}
                   </button>
@@ -503,7 +500,7 @@ function MonthGrid({
                 ))}
                 {items.length > 3 && (
                   <span className="text-[9px] text-ink-muted px-1">
-                    +{items.length - 3}
+                    {t("calendar.moreItems", { n: items.length - 3 })}
                   </span>
                 )}
               </div>

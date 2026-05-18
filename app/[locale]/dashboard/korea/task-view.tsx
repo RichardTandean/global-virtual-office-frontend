@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useCallback } from "react"
+import { useTranslations } from "next-intl"
 import { TaskItem } from "@/types/task"
 import TaskCreateForm from "@/components/task-create-form"
 import TaskList from "@/components/task-list"
@@ -8,7 +9,7 @@ import TaskCard from "@/components/task-card"
 import { EmptyState } from "@/components/ui/empty-state"
 import { Eye, Video, ArrowRight, ListChecks, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import Link from "next/link"
+import { Link } from "@/i18n/navigation"
 
 interface UserOption {
   id: string
@@ -56,6 +57,7 @@ export default function KoreaTaskView({
   editors,
   mode = "full",
 }: Props) {
+  const t = useTranslations()
   const [tasks, setTasks] = useState<TaskItem[]>(initialTasks)
   const [showCreate, setShowCreate] = useState(false)
 
@@ -84,13 +86,13 @@ export default function KoreaTaskView({
     <div className="space-y-5">
       <div className="grid grid-cols-2 gap-3">
         <MiniStat
-          label="Perlu Review"
+          label={t("korea.needsReview")}
           value={needReviewCount}
           icon={<Eye />}
           tone={needReviewCount > 0 ? "warn" : "default"}
         />
         <MiniStat
-          label="Video Baru"
+          label={t("korea.newVideosBadge")}
           value={pendingVideoCount}
           icon={<Video />}
           tone={pendingVideoCount > 0 ? "accent" : "default"}
@@ -99,12 +101,12 @@ export default function KoreaTaskView({
 
       <div className="flex items-center justify-between">
         <h2 className="text-[11px] font-medium uppercase tracking-[0.2em] text-ink-muted">
-          Task Management
+          {t("korea.taskManagement")}
         </h2>
         {mode === "full" && !showCreate && (
           <Button size="sm" onClick={() => setShowCreate(true)}>
             <Plus />
-            Buat Task
+            {t("korea.createTask")}
           </Button>
         )}
       </div>
@@ -125,15 +127,15 @@ export default function KoreaTaskView({
           {tasks.length === 0 ? (
             <EmptyState
               icon={<ListChecks />}
-              title="Belum ada task"
-              description="Buat task pertama untuk memulai workflow studio."
+              title={t("korea.noTasks")}
+              description={t("korea.noTasksDesc")}
               size="sm"
               action={
                 <Link
                   href="/dashboard/korea/tasks"
                   className="text-[12px] text-accent hover:text-accent-hover underline-offset-4 hover:underline"
                 >
-                  Buat task →
+                  {t("korea.createFirstTask")}
                 </Link>
               }
             />
@@ -146,10 +148,10 @@ export default function KoreaTaskView({
                     new Date(a.createdAt).getTime()
                 )
                 .slice(0, 4)
-                .map((t) => (
+                .map((task) => (
                   <TaskCard
-                    key={t.id}
-                    task={t}
+                    key={task.id}
+                    task={task}
                     onUpdated={refreshTasks}
                     canCreate
                     userRole="KoreaTeam"
@@ -163,7 +165,7 @@ export default function KoreaTaskView({
                 href="/dashboard/korea/tasks"
                 className="inline-flex items-center gap-1 rounded-xs px-2 py-1 text-[12px] text-ink-secondary hover:text-ink hover:bg-subtle transition-colors"
               >
-                Lihat semua task
+                {t("korea.allTasksLink")}
                 <ArrowRight className="size-3" />
               </Link>
             </div>

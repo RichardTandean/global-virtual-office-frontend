@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useTranslations } from "next-intl"
 import { PageHeader } from "@/components/shell/page-header"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -23,7 +24,7 @@ import { EmptyState } from "@/components/ui/empty-state"
 import { Skeleton } from "@/components/ui/skeleton"
 import { UserCog, Plus, Power, PowerOff, AlertCircle } from "lucide-react"
 import { toast } from "sonner"
-import { roleLabel, type Role } from "@/components/shell/nav-config"
+import { ROLE_LABEL_KEYS, type Role } from "@/components/shell/nav-config"
 
 interface UserItem {
   id: string
@@ -39,13 +40,13 @@ interface Props {
 }
 
 export function UserManagementClient({ initialUsers, currentUserId }: Props) {
+  const t = useTranslations()
   const [users, setUsers] = useState<UserItem[]>(initialUsers)
   const [loading, setLoading] = useState(initialUsers.length === 0)
   const [addOpen, setAddOpen] = useState(false)
   const [toggleTarget, setToggleTarget] = useState<UserItem | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
-  // Add form state
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -64,7 +65,7 @@ export function UserManagementClient({ initialUsers, currentUserId }: Props) {
         setUsers(data)
       }
     } catch {
-      toast.error("Gagal memuat data user")
+      toast.error(t("userManagement.loadFailed"))
     } finally {
       setLoading(false)
     }
@@ -72,7 +73,7 @@ export function UserManagementClient({ initialUsers, currentUserId }: Props) {
 
   async function handleCreate() {
     if (!name.trim() || !email.trim() || !password.trim()) {
-      toast.error("Semua field wajib diisi")
+      toast.error(t("userManagement.allFieldsRequired"))
       return
     }
 
@@ -90,16 +91,16 @@ export function UserManagementClient({ initialUsers, currentUserId }: Props) {
       })
 
       if (res.ok) {
-        toast.success(`User "${name.trim()}" berhasil ditambahkan`)
+        toast.success(t("userManagement.userAdded", { name: name.trim() }))
         setAddOpen(false)
         resetForm()
         await fetchUsers()
       } else {
         const data = await res.json().catch(() => ({}))
-        toast.error(data.message || data.error || "Gagal menambahkan user")
+        toast.error(data.message || data.error || t("userManagement.addFailed"))
       }
     } catch {
-      toast.error("Gagal menambahkan user")
+      toast.error(t("userManagement.addFailed"))
     } finally {
       setSubmitting(false)
     }
@@ -119,16 +120,18 @@ export function UserManagementClient({ initialUsers, currentUserId }: Props) {
       })
 
       if (res.ok) {
-        const label = action === "deactivate" ? "dinonaktifkan" : "diaktifkan kembali"
-        toast.success(`User "${toggleTarget.name}" berhasil ${label}`)
+        const label = action === "deactivate"
+          ? t("userManagement.deactivated", { name: toggleTarget.name })
+          : t("userManagement.activated", { name: toggleTarget.name })
+        toast.success(label)
         setToggleTarget(null)
         await fetchUsers()
       } else {
         const data = await res.json().catch(() => ({}))
-        toast.error(data.message || data.error || "Gagal mengubah status user")
+        toast.error(data.message || data.error || t("userManagement.toggleFailed"))
       }
     } catch {
-      toast.error("Gagal mengubah status user")
+      toast.error(t("userManagement.toggleFailed"))
     } finally {
       setSubmitting(false)
     }
@@ -146,9 +149,9 @@ export function UserManagementClient({ initialUsers, currentUserId }: Props) {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Admin"
-        title="User Management"
-        description="Tambah, lihat, dan kelola user platform."
+        eyebrow={t("roles.Admin")}
+        title={t("userManagement.title")}
+        description={t("userManagement.description")}
         actions={
           <Button
             size="sm"
@@ -159,7 +162,7 @@ export function UserManagementClient({ initialUsers, currentUserId }: Props) {
             className="gap-1.5"
           >
             <Plus className="size-3.5" />
-            Tambah User
+            {t("userManagement.addUser")}
           </Button>
         }
       />
@@ -175,18 +178,18 @@ export function UserManagementClient({ initialUsers, currentUserId }: Props) {
           <div className="p-10">
             <EmptyState
               icon={<UserCog />}
-              title="Belum ada user"
-              description="Tambah user pertama untuk memulai."
+              title={t("userManagement.noUsers")}
+              description={t("userManagement.noUsersDesc")}
             />
           </div>
         ) : (
           <table className="w-full text-[12px]">
             <thead className="bg-subtle/40 border-b border-line">
               <tr className="text-[10px] font-medium uppercase tracking-wider text-ink-muted">
-                <th className="text-left px-5 py-2.5 font-medium">Name</th>
-                <th className="text-left px-5 py-2.5 font-medium">Email</th>
-                <th className="text-left px-5 py-2.5 font-medium">Role</th>
-                <th className="text-left px-5 py-2.5 font-medium">Status</th>
+                <th className="text-left px-5 py-2.5 font-medium">{t("userManagement.name")}</th>
+                <th className="text-left px-5 py-2.5 font-medium">{t("userManagement.email")}</th>
+                <th className="text-left px-5 py-2.5 font-medium">{t("userManagement.role")}</th>
+                <th className="text-left px-5 py-2.5 font-medium">{t("userManagement.status")}</th>
                 <th className="text-right px-5 py-2.5 font-medium w-20" />
               </tr>
             </thead>
@@ -206,7 +209,7 @@ export function UserManagementClient({ initialUsers, currentUserId }: Props) {
                   </td>
                   <td className="px-5 py-3 text-ink-secondary">
                     <span className="inline-flex text-[10px] font-medium uppercase tracking-wider px-1.5 py-0.5 rounded-xs border border-line">
-                      {roleLabel[u.role as Role] || u.role}
+                      {t(ROLE_LABEL_KEYS[u.role as Role] || u.role)}
                     </span>
                   </td>
                   <td className="px-5 py-3">
@@ -217,13 +220,13 @@ export function UserManagementClient({ initialUsers, currentUserId }: Props) {
                           : "inline-flex text-[10px] font-medium px-1.5 py-0.5 rounded-xs bg-status-danger/10 text-status-danger border border-status-danger/20"
                       }
                     >
-                      {u.isActive ? "Active" : "Inactive"}
+                      {u.isActive ? t("userManagement.active") : t("userManagement.inactive")}
                     </span>
                   </td>
                   <td className="px-5 py-3 text-right">
                     {u.id === currentUserId ? (
                       <span className="text-[10px] text-ink-muted italic">
-                        You
+                        {t("common.you")}
                       </span>
                     ) : (
                       <Button
@@ -237,8 +240,8 @@ export function UserManagementClient({ initialUsers, currentUserId }: Props) {
                         onClick={() => setToggleTarget(u)}
                         aria-label={
                           u.isActive
-                            ? `Nonaktifkan ${u.name}`
-                            : `Aktifkan ${u.name}`
+                            ? t("userManagement.deactivate")
+                            : t("userManagement.activate")
                         }
                       >
                         {u.isActive ? (
@@ -267,42 +270,42 @@ export function UserManagementClient({ initialUsers, currentUserId }: Props) {
           <DialogHeader>
             <DialogTitle className="text-base flex items-center gap-2">
               <UserCog className="size-4" />
-              Tambah User Baru
+              {t("userManagement.addDialogTitle")}
             </DialogTitle>
             <DialogDescription>
-              Buat akun untuk user baru dengan role yang sesuai.
+              {t("userManagement.addDialogDesc")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-1">
-              <Label className="text-xs">Nama</Label>
+              <Label className="text-xs">{t("userManagement.nameLabel")}</Label>
               <Input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Nama lengkap"
+                placeholder={t("userManagement.namePlaceholder")}
                 autoFocus
               />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs">Email</Label>
+              <Label className="text-xs">{t("userManagement.emailLabel")}</Label>
               <Input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="user@lejel.com"
+                placeholder={t("userManagement.emailPlaceholder")}
               />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs">Password</Label>
+              <Label className="text-xs">{t("userManagement.passwordLabel")}</Label>
               <Input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Min. 6 karakter"
+                placeholder={t("userManagement.passwordPlaceholder")}
               />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs">Role</Label>
+              <Label className="text-xs">{t("userManagement.roleLabel")}</Label>
               <Select
                 value={role}
                 onValueChange={(v) => setRole(v as Role)}
@@ -313,7 +316,7 @@ export function UserManagementClient({ initialUsers, currentUserId }: Props) {
                 <SelectContent>
                   {roles.map((r) => (
                     <SelectItem key={r} value={r}>
-                      {roleLabel[r]}
+                      {t(ROLE_LABEL_KEYS[r])}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -325,7 +328,7 @@ export function UserManagementClient({ initialUsers, currentUserId }: Props) {
               className="w-full gap-1.5"
             >
               <Plus className="size-3.5" />
-              {submitting ? "Menyimpan..." : "Tambah User"}
+              {submitting ? t("common.saving") : t("userManagement.addUser")}
             </Button>
           </div>
         </DialogContent>
@@ -341,12 +344,14 @@ export function UserManagementClient({ initialUsers, currentUserId }: Props) {
           <DialogHeader>
             <DialogTitle className="text-base flex items-center gap-2">
               <AlertCircle className="size-4 text-ink-muted" />
-              {toggleTarget?.isActive ? "Nonaktifkan User" : "Aktifkan User"}
+              {toggleTarget?.isActive
+                ? t("userManagement.deactivateTitle")
+                : t("userManagement.activateTitle")}
             </DialogTitle>
             <DialogDescription>
               {toggleTarget?.isActive
-                ? `Apakah kamu yakin ingin menonaktifkan user ${toggleTarget?.name}? User tidak akan bisa login sampai diaktifkan kembali.`
-                : `Apakah kamu yakin ingin mengaktifkan kembali user ${toggleTarget?.name}? User akan bisa login seperti biasa.`}
+                ? t("userManagement.deactivateDesc", { name: toggleTarget?.name ?? "" })
+                : t("userManagement.activateDesc", { name: toggleTarget?.name ?? "" })}
             </DialogDescription>
           </DialogHeader>
           <div className="flex items-center gap-3 pt-2">
@@ -355,7 +360,7 @@ export function UserManagementClient({ initialUsers, currentUserId }: Props) {
               className="flex-1"
               onClick={() => setToggleTarget(null)}
             >
-              Batal
+              {t("common.cancel")}
             </Button>
             <Button
               variant={toggleTarget?.isActive ? "destructive" : "default"}
@@ -370,11 +375,11 @@ export function UserManagementClient({ initialUsers, currentUserId }: Props) {
               )}
               {submitting
                 ? toggleTarget?.isActive
-                  ? "Menonaktifkan..."
-                  : "Mengaktifkan..."
+                  ? t("userManagement.deactivating")
+                  : t("userManagement.activating")
                 : toggleTarget?.isActive
-                  ? "Nonaktifkan"
-                  : "Aktifkan"}
+                  ? t("userManagement.deactivate")
+                  : t("userManagement.activate")}
             </Button>
           </div>
         </DialogContent>

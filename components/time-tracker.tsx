@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { Play, Square, AlertCircle, Coffee, PlayCircle } from "lucide-react"
 
@@ -33,6 +34,7 @@ function workSecondsFromLog(
 }
 
 export default function TimeTracker() {
+  const t = useTranslations()
   const [isClockedIn, setIsClockedIn] = useState(false)
   const [isOnBreak, setIsOnBreak] = useState(false)
   const [activeLog, setActiveLog] = useState<TimeLog | null>(null)
@@ -92,8 +94,8 @@ export default function TimeTracker() {
   const formatHuman = (totalSec: number) => {
     const h = Math.floor(totalSec / 3600)
     const m = Math.floor((totalSec % 3600) / 60)
-    if (h > 0) return `${h}j ${m}m`
-    return `${m}m`
+    if (h > 0) return t("timeTracker.hoursFormat", { h, m })
+    return t("timeTracker.minutesFormat", { m })
   }
 
   async function handleClockIn() {
@@ -114,7 +116,7 @@ export default function TimeTracker() {
       if (res.ok) await fetchStatus()
       else {
         const data = await res.json()
-        setError(data.message || "Gagal clock-out")
+        setError(data.message || t("timeTracker.clockOutFailed"))
       }
     } finally {
       setLoading(false)
@@ -130,7 +132,7 @@ export default function TimeTracker() {
       })
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
-        setError(data.message || "Gagal mulai istirahat")
+        setError(data.message || t("timeTracker.breakStartFailed"))
       }
       await fetchStatus()
     } finally {
@@ -147,7 +149,7 @@ export default function TimeTracker() {
       })
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
-        setError(data.message || "Gagal akhiri istirahat")
+        setError(data.message || t("timeTracker.breakEndFailed"))
       }
       await fetchStatus()
     } finally {
@@ -201,18 +203,18 @@ export default function TimeTracker() {
                 }
               />
               {isOnBreak
-                ? "Istirahat"
+                ? t("timeTracker.onBreak")
                 : isClockedIn
-                  ? "Sedang bekerja"
-                  : "Tidak aktif"}{" "}
+                  ? t("timeTracker.working")
+                  : t("timeTracker.inactive")}{" "}
               · {dateText}
             </div>
             <h2 className="font-display italic text-2xl text-ink leading-none">
               {isOnBreak
-                ? "Waktu kerja dijeda"
+                ? t("timeTracker.paused")
                 : isClockedIn
-                  ? "Sesi berjalan"
-                  : "Time tracker"}
+                  ? t("timeTracker.sessionRunning")
+                  : t("timeTracker.timeTracker")}
             </h2>
           </div>
 
@@ -224,7 +226,7 @@ export default function TimeTracker() {
               {formatTime(displaySeconds)}
             </span>
             <span className="text-[10px] font-medium uppercase tracking-wider text-ink-muted">
-              {isClockedIn ? "Kerja aktif" : "Total hari ini"}
+              {isClockedIn ? t("timeTracker.activeWork") : t("timeTracker.totalToday")}
             </span>
           </div>
 
@@ -233,7 +235,7 @@ export default function TimeTracker() {
               <span className="font-mono tabular-nums">
                 {formatHuman(completedSeconds)}
               </span>{" "}
-              dari sesi sebelumnya · total{" "}
+              {t("timeTracker.fromPrevious")} · {t("timeTracker.total")}{" "}
               <span className="font-mono tabular-nums">
                 {formatHuman(totalSeconds)}
               </span>
@@ -241,16 +243,16 @@ export default function TimeTracker() {
           )}
           {!isClockedIn && !hasWorkedToday && (
             <p className="text-[11px] text-ink-muted">
-              Belum mulai kerja hari ini.
+              {t("timeTracker.notStarted")}
             </p>
           )}
           {!isClockedIn && hasWorkedToday && (
             <p className="text-[11px] text-ink-muted">
-              Terakhir clock-out · total{" "}
+              {t("timeTracker.lastClockOut")} · {t("timeTracker.total")}{" "}
               <span className="font-mono tabular-nums">
                 {formatHuman(completedSeconds)}
               </span>{" "}
-              tercatat.
+              {t("timeTracker.recorded")}
             </p>
           )}
         </div>
@@ -265,16 +267,16 @@ export default function TimeTracker() {
               className="border-line"
             >
               {breakLoading ? (
-                "Memproses..."
+                t("common.processing")
               ) : isOnBreak ? (
                 <>
                   <PlayCircle className="size-4" />
-                  Lanjut kerja
+                  {t("timeTracker.continueWork")}
                 </>
               ) : (
                 <>
                   <Coffee className="size-4" />
-                  Istirahat
+                  {t("timeTracker.break")}
                 </>
               )}
             </Button>
@@ -295,11 +297,11 @@ export default function TimeTracker() {
             ) : (
               <Play className="fill-current" />
             )}
-            {loading ? "Memproses..." : isClockedIn ? "Selesai" : "Mulai kerja"}
+            {loading ? t("common.processing") : isClockedIn ? t("timeTracker.finish") : t("timeTracker.startWork")}
           </Button>
           {activeLog && isClockedIn && (
             <p className="text-center text-[10px] text-ink-muted">
-              Mulai{" "}
+              {t("timeTracker.start")}{" "}
               <span className="font-mono tabular-nums">
                 {new Date(activeLog.clockIn).toLocaleTimeString("id-ID", {
                   hour: "2-digit",
@@ -309,7 +311,7 @@ export default function TimeTracker() {
               {isOnBreak && activeLog.breakStartedAt && (
                 <>
                   {" "}
-                  · istirahat sejak{" "}
+                  · {t("timeTracker.breakSince")}{" "}
                   <span className="font-mono tabular-nums">
                     {new Date(activeLog.breakStartedAt).toLocaleTimeString(
                       "id-ID",

@@ -1,7 +1,8 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useTranslations } from "next-intl"
+import { useRouter } from "@/i18n/navigation"
 import { Inbox, CheckCheck, Filter } from "lucide-react"
 import { PageHeader } from "@/components/shell/page-header"
 import { EmptyState } from "@/components/ui/empty-state"
@@ -25,27 +26,27 @@ import {
 } from "@/components/notifications/use-notifications"
 import { cn } from "@/lib/utils"
 
-const TYPE_LABEL: Record<string, string> = {
-  task_assigned: "Task baru",
-  task_status: "Perubahan status",
-  task_progress: "Progress",
-  task_deleted: "Task dihapus",
-  task_reassigned: "Reassign",
-  task_on_hold: "On Hold",
-  task_started: "Mulai dikerjakan",
-  revision: "Revisi",
-  video_uploaded: "Video diupload",
-  video_reviewed: "Video direview",
-  comment: "Komentar",
-  asset_uploaded: "Aset baru",
-  call_invited: "Panggilan",
-  user_created: "Akun baru",
-  user_deleted: "Akun dihapus",
-  clock_in: "Clock In",
-  clock_out: "Clock Out",
-  deadline_warning: "Deadline",
-  weekly_report: "Laporan",
-}
+const NOTIFICATION_TYPES = [
+  "task_assigned",
+  "task_status",
+  "task_progress",
+  "task_deleted",
+  "task_reassigned",
+  "task_on_hold",
+  "task_started",
+  "revision",
+  "video_uploaded",
+  "video_reviewed",
+  "comment",
+  "asset_uploaded",
+  "call_invited",
+  "user_created",
+  "user_deleted",
+  "clock_in",
+  "clock_out",
+  "deadline_warning",
+  "weekly_report",
+]
 
 const TYPE_COLOR: Record<string, string> = {
   task_assigned: "bg-status-editing",
@@ -79,6 +80,7 @@ function formatDate(iso: string) {
 }
 
 export default function NotificationsArchivePage() {
+  const t = useTranslations()
   const router = useRouter()
   const { notifications, unreadCount, loading, markRead, markAllRead } =
     useNotifications()
@@ -102,12 +104,14 @@ export default function NotificationsArchivePage() {
     }
   }
 
+  const nt = useTranslations("notifications.types")
+
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Inbox"
-        title="Notifikasi"
-        description="Semua aktivitas dan pemberitahuan dari sistem."
+        eyebrow={t("notifications.inbox")}
+        title={t("notifications.title")}
+        description={t("notifications.desc")}
         actions={
           unreadCount > 0 ? (
             <Button
@@ -117,7 +121,7 @@ export default function NotificationsArchivePage() {
               className="gap-1.5"
             >
               <CheckCheck className="size-4" />
-              Tandai semua dibaca
+              {t("notifications.markAllRead")}
             </Button>
           ) : null
         }
@@ -127,14 +131,14 @@ export default function NotificationsArchivePage() {
         <Tabs value={tab} onValueChange={(v) => setTab(v as "unread" | "all")}>
           <TabsList variant="ghost">
             <TabsTrigger value="unread">
-              Belum dibaca
+              {t("notifications.unread")}
               {unreadCount > 0 && (
                 <span className="ml-2 inline-flex h-4 min-w-4 items-center justify-center rounded-pill bg-accent px-1 text-[10px] font-semibold text-accent-foreground">
                   {unreadCount}
                 </span>
               )}
             </TabsTrigger>
-            <TabsTrigger value="all">Semua</TabsTrigger>
+            <TabsTrigger value="all">{t("notifications.all")}</TabsTrigger>
           </TabsList>
           <TabsContent value="unread" />
           <TabsContent value="all" />
@@ -144,13 +148,13 @@ export default function NotificationsArchivePage() {
           <Filter className="size-3.5 text-ink-muted" />
           <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v ?? "all")}>
             <SelectTrigger size="sm" className="w-44">
-              <SelectValue placeholder="Semua tipe" />
+              <SelectValue placeholder={t("notifications.allTypes")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Semua tipe</SelectItem>
-              {Object.entries(TYPE_LABEL).map(([k, v]) => (
+              <SelectItem value="all">{t("notifications.allTypes")}</SelectItem>
+              {NOTIFICATION_TYPES.map((k) => (
                 <SelectItem key={k} value={k}>
-                  {v}
+                  {nt(k)}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -169,11 +173,11 @@ export default function NotificationsArchivePage() {
           <div className="p-10">
             <EmptyState
               icon={<Inbox />}
-              title="Tidak ada notifikasi"
+              title={t("notifications.noNotifications")}
               description={
                 tab === "unread"
-                  ? "Tidak ada notifikasi yang belum dibaca."
-                  : "Belum ada aktivitas yang tercatat."
+                  ? t("notifications.noUnreadDesc")
+                  : t("notifications.noAllDesc")
               }
             />
           </div>
@@ -220,11 +224,9 @@ export default function NotificationsArchivePage() {
                     >
                       {n.body}
                     </p>
-                    {TYPE_LABEL[n.type] && (
-                      <span className="mt-2 inline-block text-[9px] font-medium uppercase tracking-[0.2em] text-ink-muted">
-                        {TYPE_LABEL[n.type]}
-                      </span>
-                    )}
+                    <span className="mt-2 inline-block text-[9px] font-medium uppercase tracking-[0.2em] text-ink-muted">
+                      {nt(n.type as any)}
+                    </span>
                   </div>
                 </button>
               </li>

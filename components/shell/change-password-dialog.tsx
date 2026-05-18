@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
+import { useTranslations } from "next-intl"
 
 interface ChangePasswordDialogProps {
   open: boolean
@@ -22,6 +23,7 @@ interface ChangePasswordDialogProps {
 }
 
 export function ChangePasswordDialog({ open, onOpenChange }: ChangePasswordDialogProps) {
+  const t = useTranslations()
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
 
@@ -36,28 +38,28 @@ export function ChangePasswordDialog({ open, onOpenChange }: ChangePasswordDialo
     const confirmNewPassword = formData.get("confirmNewPassword") as string
 
     if (newPassword !== confirmNewPassword) {
-      setError("Password baru dan konfirmasi tidak cocok")
+      setError(t("auth.passwordMismatch"))
       setLoading(false)
       return
     }
 
     if (newPassword.length < 6) {
-      setError("Password baru minimal 6 karakter")
+      setError(t("auth.passwordMinLength"))
       setLoading(false)
       return
     }
 
     try {
       await changePassword(oldPassword, newPassword)
-      toast.success("Password berhasil diubah", {
-        description: "Silakan login kembali dengan password baru",
+      toast.success(t("auth.passwordChanged"), {
+        description: t("auth.pleaseRelogin"),
       })
       onOpenChange(false)
       setTimeout(() => {
         window.location.href = "/login"
       }, 1500)
     } catch (err: any) {
-      setError(err.message || "Gagal mengubah password")
+      setError(err.message || t("auth.changePasswordFailed"))
     } finally {
       setLoading(false)
     }
@@ -67,9 +69,9 @@ export function ChangePasswordDialog({ open, onOpenChange }: ChangePasswordDialo
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent showCloseButton={!loading}>
         <DialogHeader>
-          <DialogTitle>Ganti Password</DialogTitle>
+          <DialogTitle>{t("changePassword.title")}</DialogTitle>
           <DialogDescription>
-            Masukkan password saat ini dan password baru Anda.
+            {t("changePassword.desc")}
           </DialogDescription>
         </DialogHeader>
 
@@ -82,40 +84,40 @@ export function ChangePasswordDialog({ open, onOpenChange }: ChangePasswordDialo
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
-            <Label htmlFor="oldPassword">Password saat ini</Label>
+            <Label htmlFor="oldPassword">{t("changePassword.currentPassword")}</Label>
             <Input
               id="oldPassword"
               name="oldPassword"
               type="password"
               required
               autoComplete="current-password"
-              placeholder="••••••••"
+              placeholder={t("changePassword.passwordPlaceholder")}
               disabled={loading}
             />
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="newPassword">Password baru</Label>
+            <Label htmlFor="newPassword">{t("changePassword.newPassword")}</Label>
             <Input
               id="newPassword"
               name="newPassword"
               type="password"
               required
               autoComplete="new-password"
-              placeholder="Minimal 6 karakter"
+              placeholder={t("changePassword.newPasswordPlaceholder")}
               disabled={loading}
             />
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="confirmNewPassword">Konfirmasi password baru</Label>
+            <Label htmlFor="confirmNewPassword">{t("changePassword.confirmPassword")}</Label>
             <Input
               id="confirmNewPassword"
               name="confirmNewPassword"
               type="password"
               required
               autoComplete="new-password"
-              placeholder="••••••••"
+              placeholder={t("changePassword.passwordPlaceholder")}
               disabled={loading}
             />
           </div>
@@ -127,11 +129,11 @@ export function ChangePasswordDialog({ open, onOpenChange }: ChangePasswordDialo
               onClick={() => onOpenChange(false)}
               disabled={loading}
             >
-              Batal
+              {t("common.cancel")}
             </Button>
             <Button type="submit" disabled={loading} className="gap-1.5">
               {loading && <Loader2 className="size-3.5 animate-spin" />}
-              {loading ? "Menyimpan..." : "Simpan"}
+              {loading ? t("common.saving") : t("common.save")}
             </Button>
           </DialogFooter>
         </form>

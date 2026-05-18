@@ -1,11 +1,11 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { useTranslations } from "next-intl"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
   VideoSubmissionItem,
   VideoStatus,
-  videoStatusLabels,
   videoStatusColors,
 } from "@/types/video-submission"
 import { MessageSquare } from "lucide-react"
@@ -25,6 +25,7 @@ export default function VideoVersionList({
   selectedVideoId,
   compact,
 }: VideoVersionListProps) {
+  const t = useTranslations()
   const [videos, setVideos] = useState<VideoSubmissionItem[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -61,7 +62,7 @@ export default function VideoVersionList({
   if (videos.length === 0) {
     return (
       <div className="rounded-md border border-dashed border-line bg-subtle/30 px-4 py-6 text-center">
-        <p className="text-[11px] text-ink-muted">Belum ada video yang diupload</p>
+        <p className="text-[11px] text-ink-muted">{t("videoUploader.noVideos")}</p>
       </div>
     )
   }
@@ -109,7 +110,7 @@ export default function VideoVersionList({
                     videoStatusColors[video.status as VideoStatus]
                   )}
                 >
-                  {videoStatusLabels[video.status as VideoStatus]}
+                  {t(`videoStatus.${video.status}`)}
                 </span>
               </div>
               <div className="mt-0.5 flex items-center gap-2 text-[10px] text-ink-muted">

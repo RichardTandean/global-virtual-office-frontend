@@ -1,5 +1,6 @@
 "use client"
 
+import { useTranslations } from "next-intl"
 import { Bell } from "lucide-react"
 import { useState } from "react"
 import { cn } from "@/lib/utils"
@@ -7,6 +8,7 @@ import { useNotifications } from "./use-notifications"
 import { NotificationDrawer } from "./notification-drawer"
 
 export function NotificationBell() {
+  const t = useTranslations()
   const { unreadCount } = useNotifications()
   const [open, setOpen] = useState(false)
 
@@ -21,7 +23,7 @@ export function NotificationBell() {
           "transition-colors duration-(--dur-fast)",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
         )}
-        aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ""}`}
+        aria-label={unreadCount > 0 ? t("notifications.unreadBadge") : t("notifications.ariaNotifications")}
       >
         <Bell className="size-4" />
         {unreadCount > 0 && (

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useRef } from "react"
+import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 import { Upload, FileVideo, X } from "lucide-react"
@@ -13,6 +14,7 @@ interface VideoUploaderProps {
 }
 
 export default function VideoUploader({ taskId, onUploaded }: VideoUploaderProps) {
+  const t = useTranslations()
   const [file, setFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
   const [progress, setProgress] = useState(0)
@@ -35,7 +37,7 @@ export default function VideoUploader({ taskId, onUploaded }: VideoUploaderProps
         }),
       })
 
-      if (!presignedRes.ok) throw new Error("Gagal mendapatkan upload URL")
+      if (!presignedRes.ok) throw new Error(t("videoUploader.uploadUrlFailed"))
       const { signedUrl, key } = await presignedRes.json()
 
       await new Promise<void>((resolve, reject) => {
@@ -47,9 +49,9 @@ export default function VideoUploader({ taskId, onUploaded }: VideoUploaderProps
         })
         xhr.addEventListener("load", () => {
           if (xhr.status >= 200 && xhr.status < 300) resolve()
-          else reject(new Error("Upload gagal"))
+          else reject(new Error(t("videoUploader.uploadFailed")))
         })
-        xhr.addEventListener("error", () => reject(new Error("Upload gagal")))
+        xhr.addEventListener("error", () => reject(new Error(t("videoUploader.uploadFailed"))))
         xhr.open("PUT", signedUrl)
         xhr.setRequestHeader("Content-Type", file.type)
         xhr.send(file)
@@ -65,15 +67,15 @@ export default function VideoUploader({ taskId, onUploaded }: VideoUploaderProps
         }),
       })
 
-      if (!confirmRes.ok) throw new Error("Gagal konfirmasi upload")
+      if (!confirmRes.ok) throw new Error(t("videoUploader.confirmFailed"))
       const video = await confirmRes.json()
 
-      toast.success(`Video V${video.version} berhasil diupload!`)
+      toast.success(t("videoUploader.uploaded", { version: video.version }))
       onUploaded(video)
       setFile(null)
       setProgress(0)
     } catch (err: any) {
-      toast.error(err.message || "Gagal upload video")
+      toast.error(err.message || t("videoUploader.uploadFailed"))
     } finally {
       setUploading(false)
     }
@@ -123,10 +125,10 @@ export default function VideoUploader({ taskId, onUploaded }: VideoUploaderProps
           <Upload className="size-5" />
           <div className="space-y-1">
             <p className="text-[12px] font-medium text-ink">
-              Drop video atau klik untuk upload
+              {t("videoUploader.prompt")}
             </p>
             <p className="text-[10px] text-ink-muted">
-              Maks tergantung server · format video apa saja
+              {t("videoUploader.hint")}
             </p>
           </div>
         </button>
@@ -148,7 +150,7 @@ export default function VideoUploader({ taskId, onUploaded }: VideoUploaderProps
               onClick={() => setFile(null)}
               disabled={uploading}
               className="size-7 inline-flex items-center justify-center rounded-xs text-ink-muted hover:text-ink hover:bg-subtle transition-colors disabled:opacity-40"
-              aria-label="Remove file"
+              aria-label={t("common.removeFile")}
             >
               <X className="size-3.5" />
             </button>
@@ -157,7 +159,7 @@ export default function VideoUploader({ taskId, onUploaded }: VideoUploaderProps
           {uploading && (
             <div className="space-y-1.5">
               <div className="flex items-center justify-between text-[10px] font-mono tabular-nums">
-                <span className="text-ink-secondary">Uploading</span>
+                <span className="text-ink-secondary">{t("videoUploader.uploadLabel")}</span>
                 <span className="text-ink">{progress}%</span>
               </div>
               <div className="h-1 w-full rounded-full bg-subtle overflow-hidden">
@@ -175,7 +177,7 @@ export default function VideoUploader({ taskId, onUploaded }: VideoUploaderProps
             className="w-full"
           >
             <Upload />
-            {uploading ? `Uploading ${progress}%` : "Upload video"}
+            {uploading ? `${t("videoUploader.uploadLabel")} ${progress}%` : t("videoUploader.uploadBtn")}
           </Button>
         </div>
       )}

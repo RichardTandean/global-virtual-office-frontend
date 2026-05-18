@@ -1,12 +1,13 @@
 "use client"
 
 import { useState, useCallback } from "react"
+import { useTranslations } from "next-intl"
 import { TaskItem } from "@/types/task"
 import TaskList from "@/components/task-list"
 import TaskCard from "@/components/task-card"
 import { EmptyState } from "@/components/ui/empty-state"
 import { AlertTriangle, Edit, Clock, CheckCircle, ArrowRight, ListChecks } from "lucide-react"
-import Link from "next/link"
+import { Link } from "@/i18n/navigation"
 
 interface Props {
   initialTasks: TaskItem[]
@@ -45,6 +46,7 @@ function MiniStat({ label, value, icon, tone }: MiniStatProps) {
 }
 
 export default function EditorTaskView({ initialTasks, mode = "full" }: Props) {
+  const t = useTranslations()
   const [tasks, setTasks] = useState<TaskItem[]>(initialTasks)
 
   const refreshTasks = useCallback(async () => {
@@ -68,25 +70,25 @@ export default function EditorTaskView({ initialTasks, mode = "full" }: Props) {
     <div className="space-y-5">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <MiniStat
-          label="Perlu Revisi"
+          label={t("editor.needsRevision")}
           value={reviseCount}
           icon={<AlertTriangle />}
           tone={reviseCount > 0 ? "danger" : "default"}
         />
         <MiniStat
-          label="Dikerjakan"
+          label={t("editor.inProgress")}
           value={editingCount}
           icon={<Edit />}
           tone={editingCount > 0 ? "warn" : "default"}
         />
         <MiniStat
-          label="Menunggu"
+          label={t("editor.waiting")}
           value={assignedCount}
           icon={<Clock />}
           tone={assignedCount > 0 ? "accent" : "default"}
         />
         <MiniStat
-          label="Selesai"
+          label={t("editor.completed")}
           value={completedCount}
           icon={<CheckCircle />}
           tone={completedCount > 0 ? "success" : "default"}
@@ -98,8 +100,8 @@ export default function EditorTaskView({ initialTasks, mode = "full" }: Props) {
           {tasks.length === 0 ? (
             <EmptyState
               icon={<ListChecks />}
-              title="Tidak ada task hari ini"
-              description="Saat tim memberikan task, akan muncul di sini."
+              title={t("editor.noTasksToday")}
+              description={t("editor.noTasksDesc")}
               size="sm"
             />
           ) : (
@@ -111,10 +113,10 @@ export default function EditorTaskView({ initialTasks, mode = "full" }: Props) {
                     new Date(a.createdAt).getTime()
                 )
                 .slice(0, 4)
-                .map((t) => (
+                .map((task) => (
                   <TaskCard
-                    key={t.id}
-                    task={t}
+                    key={task.id}
+                    task={task}
                     onUpdated={refreshTasks}
                     userRole="Editor"
                   />
@@ -127,7 +129,7 @@ export default function EditorTaskView({ initialTasks, mode = "full" }: Props) {
                 href="/dashboard/editor/tasks"
                 className="inline-flex items-center gap-1 rounded-xs px-2 py-1 text-[12px] text-ink-secondary hover:text-ink hover:bg-subtle transition-colors"
               >
-                Lihat semua task
+                {t("editor.allTasks")}
                 <ArrowRight className="size-3" />
               </Link>
             </div>

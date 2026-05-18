@@ -1,9 +1,10 @@
 import { requireRole } from "@/lib/auth-helpers"
 import { fetchBackend } from "@/lib/session"
+import { getTranslations } from "next-intl/server"
 import { TaskItem } from "@/types/task"
 import KoreaTaskView from "../task-view"
 import { PageHeader } from "@/components/shell/page-header"
-import Link from "next/link"
+import { Link } from "@/i18n/navigation"
 import { ArrowLeft } from "lucide-react"
 
 interface UserItem {
@@ -15,6 +16,7 @@ interface UserItem {
 
 export default async function KoreaTasksPage() {
   await requireRole("KoreaTeam")
+  const t = await getTranslations()
 
   let tasks: TaskItem[] = []
   let editors: UserItem[] = []
@@ -32,23 +34,23 @@ export default async function KoreaTasksPage() {
       editors = users.filter((u) => u.role === "Editor")
     }
   } catch {
-    fetchError = "Terjadi kesalahan koneksi"
+    fetchError = t("error.connectionError")
   }
 
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <PageHeader
-          eyebrow="Korea Team"
-          title="Task management"
-          description="Semua task tim editor."
+          eyebrow={t("roles.KoreaTeam")}
+          title={t("korea.taskPageTitle")}
+          description={t("korea.taskPageDesc")}
         />
         <Link
           href="/dashboard/korea"
           className="inline-flex items-center gap-1.5 text-[12px] text-ink-secondary hover:text-ink transition-colors"
         >
           <ArrowLeft className="size-3.5" />
-          Dashboard
+          {t("nav.dashboard")}
         </Link>
       </div>
 

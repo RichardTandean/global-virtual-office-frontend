@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
+import { useTranslations } from "next-intl"
 
 interface VideoPlayerProps {
   videoId?: string
@@ -15,6 +16,7 @@ export default function VideoPlayer({
   initialTime = 0,
   onTimeUpdate,
 }: VideoPlayerProps) {
+  const t = useTranslations()
   const videoRef = useRef<HTMLVideoElement>(null)
   const [playUrl, setPlayUrl] = useState<string | null>(null)
   const [error, setError] = useState(false)
@@ -50,7 +52,7 @@ export default function VideoPlayer({
   if (error) {
     return (
       <div className="rounded-md border border-line bg-surface p-8 text-center text-[12px] text-ink-muted">
-        Gagal memuat video. Pastikan file sudah diupload dengan benar.
+        {t("common.videoLoadFailed")}
       </div>
     )
   }
@@ -58,7 +60,7 @@ export default function VideoPlayer({
   if (!playUrl) {
     return (
       <div className="rounded-md border border-line bg-surface aspect-video grid place-items-center text-[12px] text-ink-muted animate-pulse">
-        Memuat video...
+        {t("common.loadingVideo")}
       </div>
     )
   }
@@ -76,7 +78,7 @@ export default function VideoPlayer({
           }
         }}
       >
-        Browser kamu tidak mendukung pemutaran video.
+        {t("common.browserNotSupported")}
       </video>
     </div>
   )

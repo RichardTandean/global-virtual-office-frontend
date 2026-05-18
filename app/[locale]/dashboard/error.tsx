@@ -1,8 +1,10 @@
 "use client"
 
 import { useEffect } from "react"
+import { useTranslations } from "next-intl"
 import { AlertTriangle, RotateCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Link } from "@/i18n/navigation"
 
 export default function DashboardError({
   error,
@@ -11,6 +13,8 @@ export default function DashboardError({
   error: Error & { digest?: string }
   reset: () => void
 }) {
+  const t = useTranslations()
+
   useEffect(() => {
     if (process.env.NODE_ENV === "development") {
       console.error(error)
@@ -24,14 +28,13 @@ export default function DashboardError({
       </span>
       <div className="space-y-2">
         <p className="text-[10px] font-medium uppercase tracking-[0.2em] text-ink-muted">
-          Error
+          {t("common.error")}
         </p>
         <h1 className="font-display italic text-4xl text-ink">
-          Ada yang tidak beres
+          {t("error.heading")}
         </h1>
         <p className="max-w-md text-[13px] text-ink-secondary leading-relaxed">
-          Halaman ini gagal dimuat. Periksa koneksi atau coba lagi. Jika masih
-          gagal, hubungi admin.
+          {t("error.description")}
         </p>
         {error.digest && (
           <p className="font-mono text-[10px] text-ink-muted">
@@ -42,14 +45,14 @@ export default function DashboardError({
       <div className="flex items-center gap-3">
         <Button onClick={reset} className="gap-1.5">
           <RotateCw className="size-4" />
-          Coba lagi
+          {t("common.retry")}
         </Button>
-        <a
+        <Link
           href="/dashboard"
           className="text-[12px] text-ink-secondary hover:text-ink underline underline-offset-4"
         >
-          Kembali ke dashboard
-        </a>
+          {t("common.backToDashboard")}
+        </Link>
       </div>
     </div>
   )

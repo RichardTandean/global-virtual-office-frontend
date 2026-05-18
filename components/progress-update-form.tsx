@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -15,6 +16,7 @@ export default function ProgressUpdateForm({
   taskId,
   onSubmitted,
 }: ProgressUpdateFormProps) {
+  const t = useTranslations()
   const [percent, setPercent] = useState(0)
   const [note, setNote] = useState("")
   const [fileUrl, setFileUrl] = useState("")
@@ -48,11 +50,11 @@ export default function ProgressUpdateForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
       <h4 className="text-[10px] font-medium uppercase tracking-[0.2em] text-ink-muted">
-        Update progress
+        {t("progress.heading")}
       </h4>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="space-y-1.5">
-          <Label>Persentase (0-100)</Label>
+          <Label>{t("progress.percentLabel")}</Label>
           <Input
             type="number"
             min={0}
@@ -63,26 +65,26 @@ export default function ProgressUpdateForm({
           />
         </div>
         <div className="space-y-1.5">
-          <Label>File URL (opsional)</Label>
+          <Label>{t("progress.fileUrlLabel")}</Label>
           <Input
             type="url"
             value={fileUrl}
             onChange={(e) => setFileUrl(e.target.value)}
-            placeholder="https://..."
+            placeholder={t("progress.fileUrlPlaceholder")}
           />
         </div>
       </div>
       <div className="space-y-1.5">
-        <Label>Catatan</Label>
+        <Label>{t("progress.noteLabel")}</Label>
         <Textarea
           value={note}
           onChange={(e) => setNote(e.target.value)}
           rows={2}
-          placeholder="Apa yang sudah dikerjakan, kendala, dst..."
+          placeholder={t("progress.notePlaceholder")}
         />
       </div>
       <Button type="submit" disabled={loading} size="sm">
-        {loading ? "Mengirim..." : "Kirim progress"}
+        {loading ? t("common.submitting") : t("progress.submitBtn")}
       </Button>
     </form>
   )

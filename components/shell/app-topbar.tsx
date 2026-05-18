@@ -5,6 +5,7 @@ import { Kbd } from "@/components/ui/kbd"
 import { BreadcrumbTrail } from "./breadcrumb-trail"
 import { NotificationBell } from "@/components/notifications/notification-bell"
 import { cn } from "@/lib/utils"
+import { useTranslations } from "next-intl"
 
 interface AppTopbarProps {
   onOpenMobileNav: () => void
@@ -12,6 +13,7 @@ interface AppTopbarProps {
 }
 
 export function AppTopbar({ onOpenMobileNav, onOpenCommand }: AppTopbarProps) {
+  const t = useTranslations()
   const isMac =
     typeof navigator !== "undefined" &&
     /Mac|iPhone|iPad|iPod/.test(navigator.platform)
@@ -23,7 +25,7 @@ export function AppTopbar({ onOpenMobileNav, onOpenCommand }: AppTopbarProps) {
           type="button"
           onClick={onOpenMobileNav}
           className="md:hidden inline-flex size-8 items-center justify-center rounded-sm text-ink-secondary hover:bg-subtle hover:text-ink transition-colors"
-          aria-label="Open navigation"
+          aria-label={t("nav.openNav")}
         >
           <Menu className="size-4" />
         </button>
@@ -40,11 +42,11 @@ export function AppTopbar({ onOpenMobileNav, onOpenCommand }: AppTopbarProps) {
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus",
             "min-w-[180px] md:min-w-[240px] justify-between"
           )}
-          aria-label="Open command palette"
+          aria-label={t("nav.openCommand")}
         >
           <span className="inline-flex items-center gap-2 text-[12px]">
             <Search className="size-3.5" />
-            <span className="hidden sm:inline">Search…</span>
+            <span className="hidden sm:inline">{t("nav.searchPlaceholder")}</span>
           </span>
           <Kbd>{isMac ? "⌘K" : "Ctrl K"}</Kbd>
         </button>

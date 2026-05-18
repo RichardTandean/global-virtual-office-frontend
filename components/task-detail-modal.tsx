@@ -1,10 +1,10 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { useTranslations } from "next-intl"
 import {
   TaskItem,
   ProgressUpdateItem,
-  statusLabels,
   FLOW,
   EDITOR_CAN_CHANGE,
   KOREA_CAN_CHANGE,
@@ -65,6 +65,7 @@ export default function TaskDetailModal({
   onUpdated,
   userRole,
 }: TaskDetailModalProps) {
+  const t = useTranslations()
   const [detail, setDetail] = useState<TaskItem>(task)
   const [statusLoading, setStatusLoading] = useState(false)
   const [statusError, setStatusError] = useState("")
@@ -152,12 +153,12 @@ export default function TaskDetailModal({
         setYoutubeUrl("")
         await Promise.all([fetchDetail(), fetchStatusLogs()])
         onUpdated()
-        toast.success(statusLabels[newStatus] || "Status diperbarui")
+        toast.success(t(`tasks.status.${newStatus}`))
       } else {
-        setStatusError(data.message || "Gagal update status")
+        setStatusError(data.message || t("tasks.list.statusUpdateFailed"))
       }
     } catch {
-      setStatusError("Gagal update status")
+      setStatusError(t("tasks.list.statusUpdateFailed"))
     } finally {
       setStatusLoading(false)
     }
@@ -173,7 +174,7 @@ export default function TaskDetailModal({
       })
       await fetchDetail()
       onUpdated()
-      toast.success("Video disetujui")
+      toast.success(t("tasks.list.videoApproved"))
     } finally {
       setVideoLoading(false)
     }
@@ -211,9 +212,9 @@ export default function TaskDetailModal({
       setRevisionNote("")
       setRevisionAttachment("")
       setRevisionTargetVideoId(null)
-      toast.success("Revisi dikirim ke editor")
+      toast.success(t("tasks.list.revisionSent"))
     } catch {
-      toast.error("Gagal mengirim revisi")
+      toast.error(t("tasks.list.revisionFailed"))
     } finally {
       setVideoLoading(false)
     }
@@ -228,7 +229,7 @@ export default function TaskDetailModal({
           month: "long",
           year: "numeric",
         })
-      : "Tidak ada deadline"
+      : t("tasks.list.noDeadline")
 
   const currentIdx = FLOW.indexOf(detail.status)
 
@@ -260,7 +261,7 @@ export default function TaskDetailModal({
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0 flex-1 space-y-1.5">
               <div className="inline-flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.2em] text-ink-muted">
-                <span>Task</span>
+                <span>{t("tasks.list.taskEyebrow")}</span>
                 <span className="font-mono normal-case tracking-normal text-ink-secondary">
                   #{detail.id.slice(0, 6)}
                 </span>
@@ -276,7 +277,7 @@ export default function TaskDetailModal({
             <button
               onClick={onClose}
               className="size-8 inline-flex items-center justify-center rounded-sm text-ink-muted hover:text-ink hover:bg-subtle transition-colors shrink-0"
-              aria-label="Close"
+              aria-label={t("common.close")}
             >
               <X className="size-4" />
             </button>
@@ -309,17 +310,17 @@ export default function TaskDetailModal({
         <div className="px-5 md:px-7 border-b border-line shrink-0">
           <Tabs value={tab} onValueChange={(v) => setTab(v as any)}>
             <TabsList variant="line" className="border-b-0">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="overview">{t("tasks.list.overview")}</TabsTrigger>
               <TabsTrigger value="video">
-                Video
+                {t("tasks.list.video")}
                 {videoCount > 0 && (
                   <span className="ml-1 font-mono text-[10px] tabular-nums text-ink-muted">
                     {videoCount}
                   </span>
                 )}
               </TabsTrigger>
-              <TabsTrigger value="history">History</TabsTrigger>
-              <TabsTrigger value="assets">Materi</TabsTrigger>
+              <TabsTrigger value="history">{t("tasks.list.history")}</TabsTrigger>
+              <TabsTrigger value="assets">{t("tasks.list.materials")}</TabsTrigger>
             </TabsList>
             <TabsContent value="overview" />
             <TabsContent value="video" />
@@ -344,22 +345,22 @@ export default function TaskDetailModal({
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-[12px]">
                     <MetaRow
                       icon={<User className="size-3" />}
-                      label="Assigned to"
+                      label={t("tasks.list.assignedTo")}
                       value={detail.assignee.name}
                     />
                     <MetaRow
                       icon={<User className="size-3" />}
-                      label="Created by"
+                      label={t("tasks.list.createdBy")}
                       value={detail.assigner.name}
                     />
                     <MetaRow
                       icon={<Calendar className="size-3" />}
-                      label="Deadline"
+                      label={t("tasks.list.deadline")}
                       value={deadlineText}
                     />
                     <MetaRow
                       icon={<Activity className="size-3" />}
-                      label="Progress"
+                      label={t("tasks.list.progress")}
                       value={
                         <span className="font-mono tabular-nums text-ink">
                           {detail.progressPercent}%
@@ -382,7 +383,7 @@ export default function TaskDetailModal({
                   {detail.status === "Revise" && detail.revisionNote && (
                     <div className="rounded-md border border-status-revise/30 bg-status-revise/8 p-4">
                       <h4 className="text-[10px] font-medium uppercase tracking-[0.2em] text-status-revise">
-                        Catatan revisi
+                        {t("tasks.list.revisionNote")}
                       </h4>
                       <p className="mt-1.5 text-[13px] text-ink whitespace-pre-wrap leading-relaxed">
                         {detail.revisionNote}
@@ -394,7 +395,7 @@ export default function TaskDetailModal({
                           rel="noopener noreferrer"
                           className="mt-2 inline-flex items-center gap-1 text-[11px] text-accent hover:text-accent-hover hover:underline"
                         >
-                          Lihat attachment <ExternalLink className="size-3" />
+                          {t("tasks.list.viewAttachment")} <ExternalLink className="size-3" />
                         </a>
                       )}
                     </div>
@@ -403,7 +404,7 @@ export default function TaskDetailModal({
                   {detail.description && (
                     <div className="space-y-1.5">
                       <h4 className="text-[10px] font-medium uppercase tracking-[0.2em] text-ink-muted">
-                        Deskripsi
+                        {t("tasks.list.description")}
                       </h4>
                       <p className="text-[13px] text-ink leading-relaxed whitespace-pre-wrap">
                         {detail.description}
@@ -414,7 +415,7 @@ export default function TaskDetailModal({
                   {detail.briefUrl && (
                     <div className="space-y-1.5">
                       <h4 className="text-[10px] font-medium uppercase tracking-[0.2em] text-ink-muted">
-                        Brief / Script
+                        {t("tasks.list.briefScript")}
                       </h4>
                       <a
                         href={detail.briefUrl}
@@ -423,7 +424,7 @@ export default function TaskDetailModal({
                         className="inline-flex items-center gap-1.5 text-[12px] text-accent hover:text-accent-hover hover:underline"
                       >
                         <FileText className="size-3" />
-                        Lihat brief
+                        {t("tasks.list.viewBrief")}
                         <ExternalLink className="size-3" />
                       </a>
                     </div>
@@ -433,7 +434,7 @@ export default function TaskDetailModal({
                   {allowedTransitions.length > 0 && (
                     <div className="space-y-2 pt-2 border-t border-line">
                       <h4 className="text-[10px] font-medium uppercase tracking-[0.2em] text-ink-muted">
-                        Ubah status
+                        {t("tasks.list.changeStatus")}
                       </h4>
                       {statusError && (
                         <p className="text-[12px] text-status-danger">
@@ -447,8 +448,7 @@ export default function TaskDetailModal({
                         videoCount === 0 && (
                           <div className="rounded-md border border-status-need-review/30 bg-status-need-review/10 p-3">
                             <p className="text-[12px] text-ink-secondary">
-                              Upload video terlebih dahulu sebelum mengirim
-                              untuk review.
+                              {t("tasks.list.uploadTip")}
                             </p>
                           </div>
                         )}
@@ -458,7 +458,7 @@ export default function TaskDetailModal({
                           disabled={statusLoading}
                           render={
                             <Button size="sm" disabled={statusLoading}>
-                              {statusLoading ? "Memproses..." : "Pilih status"}
+                              {statusLoading ? t("common.processing") : t("tasks.list.selectStatus")}
                               <ChevronDown />
                             </Button>
                           }
@@ -480,7 +480,7 @@ export default function TaskDetailModal({
                               }}
                             >
                               <ArrowRight className="size-3" />
-                              {statusLabels[s]}
+                              {t(`tasks.status.${s}`)}
                             </DropdownMenuItem>
                           ))}
                         </DropdownMenuContent>
@@ -489,13 +489,13 @@ export default function TaskDetailModal({
                       {showYoutubeInput && (
                         <div className="rounded-md border border-status-ready-upload/30 bg-status-ready-upload/8 p-3 space-y-2">
                           <p className="text-[11px] font-medium text-status-ready-upload uppercase tracking-wider">
-                            Link YouTube (opsional)
+                            {t("tasks.list.youtubeLabel")}
                           </p>
                           <Input
                             type="url"
                             value={youtubeUrl}
                             onChange={(e) => setYoutubeUrl(e.target.value)}
-                            placeholder="https://youtube.com/watch?v=..."
+                            placeholder={t("tasks.list.youtubePlaceholder")}
                           />
                           <div className="flex gap-2">
                             <Button
@@ -503,7 +503,7 @@ export default function TaskDetailModal({
                               onClick={() => handleStatusChange("Completed")}
                               disabled={statusLoading}
                             >
-                              Tandai selesai
+                              {t("tasks.list.markComplete")}
                             </Button>
                             <Button
                               size="sm"
@@ -513,7 +513,7 @@ export default function TaskDetailModal({
                                 setYoutubeUrl("")
                               }}
                             >
-                              Batal
+                              {t("common.cancel")}
                             </Button>
                           </div>
                         </div>
@@ -522,11 +522,10 @@ export default function TaskDetailModal({
                       {showOnHoldForm && (
                         <div className="rounded-md border border-status-on-hold/30 bg-status-on-hold/8 p-3 space-y-2">
                           <p className="text-[11px] font-medium text-status-on-hold uppercase tracking-wider">
-                            Update progress sebelum on hold
+                            {t("tasks.list.onHoldInfo")}
                           </p>
                           <p className="text-[11px] text-ink-secondary">
-                            Tulis progress saat ini agar tim tahu sampai di mana
-                            pekerjaanmu.
+                            {t("tasks.list.onHoldDesc")}
                           </p>
                           <ProgressUpdateForm
                             taskId={task.id}
@@ -536,7 +535,7 @@ export default function TaskDetailModal({
                               fetchStatusLogs()
                               onUpdated()
                               setShowOnHoldForm(false)
-                              toast.success("Progress disimpan, status On Hold")
+                              toast.success(t("tasks.list.progressSaved"))
                             }}
                           />
                           <Button
@@ -544,7 +543,7 @@ export default function TaskDetailModal({
                             variant="ghost"
                             onClick={() => setShowOnHoldForm(false)}
                           >
-                            Batal
+                            {t("common.cancel")}
                           </Button>
                         </div>
                       )}
@@ -577,7 +576,7 @@ export default function TaskDetailModal({
                           onClick={() => handleApproveVideo(selectedVideo.id)}
                         >
                           <Check />
-                          Setujui
+                          {t("tasks.list.approve")}
                         </Button>
                         <Button
                           size="sm"
@@ -587,7 +586,7 @@ export default function TaskDetailModal({
                           onClick={() => handleRejectVideo(selectedVideo.id)}
                         >
                           <X />
-                          Tolak (Revisi)
+                          {t("tasks.list.rejectRevision")}
                         </Button>
                       </div>
 
@@ -595,13 +594,13 @@ export default function TaskDetailModal({
                         revisionTargetVideoId === selectedVideo.id && (
                           <div className="rounded-md border border-status-revise/30 bg-status-revise/8 p-3 space-y-2">
                             <p className="text-[11px] font-medium text-status-revise uppercase tracking-wider">
-                              Catatan revisi
+                              {t("tasks.list.revisionNoteLabel")}
                             </p>
                             <Textarea
                               value={revisionNote}
                               onChange={(e) => setRevisionNote(e.target.value)}
                               rows={3}
-                              placeholder="Tulis catatan revisi..."
+                              placeholder={t("tasks.list.revisionNotePlaceholder")}
                             />
                             <Input
                               type="url"
@@ -609,7 +608,7 @@ export default function TaskDetailModal({
                               onChange={(e) =>
                                 setRevisionAttachment(e.target.value)
                               }
-                              placeholder="URL attachment (opsional)"
+                              placeholder={t("tasks.list.revisionUrlPlaceholder")}
                             />
                             <div className="flex gap-2">
                               <Button
@@ -617,7 +616,7 @@ export default function TaskDetailModal({
                                 onClick={handleSubmitRevision}
                                 disabled={videoLoading || !revisionNote.trim()}
                               >
-                                Kirim revisi
+                                {t("tasks.list.sendRevision")}
                               </Button>
                               <Button
                                 size="sm"
@@ -627,7 +626,7 @@ export default function TaskDetailModal({
                                   setRevisionTargetVideoId(null)
                                 }}
                               >
-                                Batal
+                                {t("common.cancel")}
                               </Button>
                             </div>
                           </div>
@@ -637,7 +636,7 @@ export default function TaskDetailModal({
 
                   <div>
                     <h4 className="mb-2 text-[10px] font-medium uppercase tracking-[0.2em] text-ink-muted">
-                      Versions
+                      {t("tasks.list.versions")}
                     </h4>
                     <VideoVersionList
                       taskId={task.id}
@@ -653,7 +652,7 @@ export default function TaskDetailModal({
                 <div className="p-5 md:p-7 space-y-6">
                   {statusLogs.length === 0 && progressUpdates.length === 0 && (
                     <p className="text-[12px] text-ink-muted text-center py-6">
-                      Belum ada riwayat aktivitas.
+                      {t("tasks.list.noActivity")}
                     </p>
                   )}
 
@@ -661,7 +660,7 @@ export default function TaskDetailModal({
                     <div className="space-y-2">
                       <h4 className="text-[10px] font-medium uppercase tracking-[0.2em] text-ink-muted flex items-center gap-1.5">
                         <History className="size-3" />
-                        Riwayat status
+                        {t("tasks.list.statusHistory")}
                       </h4>
                       <div className="rounded-md border border-line bg-subtle/30 divide-y divide-line">
                         {statusLogs.map((log) => (
@@ -706,7 +705,7 @@ export default function TaskDetailModal({
                     <div className="space-y-2">
                       <h4 className="text-[10px] font-medium uppercase tracking-[0.2em] text-ink-muted flex items-center gap-1.5">
                         <Activity className="size-3" />
-                        Riwayat progress
+                        {t("tasks.list.progressHistory")}
                       </h4>
                       <div className="rounded-md border border-line bg-subtle/30 divide-y divide-line">
                         {progressUpdates.map((up) => (
@@ -743,7 +742,7 @@ export default function TaskDetailModal({
                                   rel="noopener noreferrer"
                                   className="text-[11px] text-accent hover:underline"
                                 >
-                                  Lihat file
+                                  {t("tasks.list.viewFile")}
                                 </a>
                               )}
                             </div>

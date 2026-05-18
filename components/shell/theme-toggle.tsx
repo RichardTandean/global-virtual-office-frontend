@@ -4,6 +4,7 @@ import { useTheme } from "next-themes"
 import { useEffect, useState } from "react"
 import { Moon, Sun } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useTranslations } from "next-intl"
 
 interface ThemeToggleProps {
   variant?: "icon" | "row"
@@ -11,6 +12,7 @@ interface ThemeToggleProps {
 }
 
 export function ThemeToggle({ variant = "icon", className }: ThemeToggleProps) {
+  const t = useTranslations()
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
@@ -29,7 +31,7 @@ export function ThemeToggle({ variant = "icon", className }: ThemeToggleProps) {
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus",
           className
         )}
-        aria-label={`Switch to ${next} mode`}
+        aria-label={isDark ? t("theme.switchToLight") : t("theme.switchToDark")}
       >
         <span className="inline-flex items-center gap-2">
           {mounted && isDark ? (
@@ -37,10 +39,10 @@ export function ThemeToggle({ variant = "icon", className }: ThemeToggleProps) {
           ) : (
             <Sun className="size-3.5" />
           )}
-          {mounted ? (isDark ? "Dark mode" : "Light mode") : "Theme"}
+          {mounted ? (isDark ? t("theme.dark") : t("theme.light")) : t("theme.light")}
         </span>
         <span className="font-mono text-[10px] uppercase tracking-wider text-ink-muted">
-          {mounted ? (isDark ? "Dark" : "Light") : "—"}
+          {mounted ? (isDark ? t("theme.dark") : t("theme.light")) : "—"}
         </span>
       </button>
     )
@@ -56,7 +58,7 @@ export function ThemeToggle({ variant = "icon", className }: ThemeToggleProps) {
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus",
         className
       )}
-      aria-label={`Switch to ${next} mode`}
+      aria-label={isDark ? t("theme.switchToLight") : t("theme.switchToDark")}
     >
       {mounted && isDark ? (
         <Moon className="size-4" />

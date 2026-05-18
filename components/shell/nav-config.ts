@@ -9,6 +9,7 @@ import {
   UserCog,
   type LucideIcon,
 } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 export type Role = "Editor" | "KoreaTeam" | "Admin"
 
@@ -25,114 +26,119 @@ export interface NavSection {
   items: NavItem[]
 }
 
-const editor: NavSection[] = [
-  {
-    items: [
-      { label: "Dashboard", href: "/dashboard/editor", icon: LayoutDashboard },
-      { label: "My Tasks", href: "/dashboard/editor/tasks", icon: ListChecks },
-      { label: "Calendar", href: "/dashboard/editor/calendar", icon: CalendarDays },
-    ],
-  },
-  {
-    label: "Collaborate",
-    items: [
-      { label: "Calls", href: "/dashboard/calls", icon: Phone },
-    ],
-  },
-  {
-    label: "You",
-    items: [
-      {
-        label: "Notifications",
-        href: "/dashboard/notifications",
-        icon: Bell,
-        badge: "notif",
-      },
-    ],
-  },
-]
+type TFunc = (key: string) => string
 
-const korea: NavSection[] = [
-  {
-    items: [
-      { label: "Dashboard", href: "/dashboard/korea", icon: LayoutDashboard },
-      { label: "Tasks", href: "/dashboard/korea/tasks", icon: ListChecks },
-      { label: "Calendar", href: "/dashboard/korea/calendar", icon: CalendarDays },
-    ],
-  },
-  {
-    label: "Collaborate",
-    items: [
-      { label: "Calls", href: "/dashboard/calls", icon: Phone },
-    ],
-  },
-  {
-    label: "You",
-    items: [
-      {
-        label: "Notifications",
-        href: "/dashboard/notifications",
-        icon: Bell,
-        badge: "notif",
-      },
-    ],
-  },
-]
-
-const admin: NavSection[] = [
-  {
-    items: [
-      { label: "Dashboard", href: "/dashboard/admin", icon: LayoutDashboard },
-      { label: "Tasks", href: "/dashboard/korea/tasks", icon: ListChecks },
-      { label: "Calendar", href: "/dashboard/admin/calendar", icon: CalendarDays },
-    ],
-  },
-  {
-    label: "Collaborate",
-    items: [
-      { label: "Calls", href: "/dashboard/calls", icon: Phone },
-    ],
-  },
-  {
-    label: "Admin",
-    items: [
-      { label: "Team", href: "/dashboard/admin", icon: Users },
-      { label: "Reports", href: "/dashboard/admin/reports", icon: BarChart3 },
-      { label: "Users", href: "/dashboard/admin/users", icon: UserCog },
-    ],
-  },
-  {
-    label: "You",
-    items: [
-      {
-        label: "Notifications",
-        href: "/dashboard/notifications",
-        icon: Bell,
-        badge: "notif",
-      },
-    ],
-  },
-]
-
-export function navFor(role: Role): NavSection[] {
+export function getNavConfig(t: TFunc, role: Role): NavSection[] {
   switch (role) {
     case "Admin":
-      return admin
+      return [
+        {
+          items: [
+            { label: t("nav.dashboard"), href: "/dashboard/admin", icon: LayoutDashboard },
+            { label: t("nav.tasks"), href: "/dashboard/korea/tasks", icon: ListChecks },
+            { label: t("nav.calendar"), href: "/dashboard/admin/calendar", icon: CalendarDays },
+          ],
+        },
+        {
+          label: t("nav.collaborate"),
+          items: [
+            { label: t("nav.calls"), href: "/dashboard/calls", icon: Phone },
+          ],
+        },
+        {
+          label: t("nav.admin"),
+          items: [
+            { label: t("nav.team"), href: "/dashboard/admin", icon: Users },
+            { label: t("nav.reports"), href: "/dashboard/admin/reports", icon: BarChart3 },
+            { label: t("nav.users"), href: "/dashboard/admin/users", icon: UserCog },
+          ],
+        },
+        {
+          label: t("nav.you"),
+          items: [
+            {
+              label: t("nav.notifications"),
+              href: "/dashboard/notifications",
+              icon: Bell,
+              badge: "notif",
+            },
+          ],
+        },
+      ]
     case "KoreaTeam":
-      return korea
+      return [
+        {
+          items: [
+            { label: t("nav.dashboard"), href: "/dashboard/korea", icon: LayoutDashboard },
+            { label: t("nav.tasks"), href: "/dashboard/korea/tasks", icon: ListChecks },
+            { label: t("nav.calendar"), href: "/dashboard/korea/calendar", icon: CalendarDays },
+          ],
+        },
+        {
+          label: t("nav.collaborate"),
+          items: [
+            { label: t("nav.calls"), href: "/dashboard/calls", icon: Phone },
+          ],
+        },
+        {
+          label: t("nav.you"),
+          items: [
+            {
+              label: t("nav.notifications"),
+              href: "/dashboard/notifications",
+              icon: Bell,
+              badge: "notif",
+            },
+          ],
+        },
+      ]
     default:
-      return editor
+      return [
+        {
+          items: [
+            { label: t("nav.dashboard"), href: "/dashboard/editor", icon: LayoutDashboard },
+            { label: t("nav.myTasks"), href: "/dashboard/editor/tasks", icon: ListChecks },
+            { label: t("nav.calendar"), href: "/dashboard/editor/calendar", icon: CalendarDays },
+          ],
+        },
+        {
+          label: t("nav.collaborate"),
+          items: [
+            { label: t("nav.calls"), href: "/dashboard/calls", icon: Phone },
+          ],
+        },
+        {
+          label: t("nav.you"),
+          items: [
+            {
+              label: t("nav.notifications"),
+              href: "/dashboard/notifications",
+              icon: Bell,
+              badge: "notif",
+            },
+          ],
+        },
+      ]
   }
 }
 
-export const roleLabel: Record<Role, string> = {
-  Editor: "Editor",
-  KoreaTeam: "Korea Team",
-  Admin: "Admin",
+export const ROLE_LABEL_KEYS: Record<Role, string> = {
+  Editor: "roles.Editor",
+  KoreaTeam: "roles.KoreaTeam",
+  Admin: "roles.Admin",
 }
 
 export function homeFor(role: Role): string {
   if (role === "Admin") return "/dashboard/admin"
   if (role === "KoreaTeam") return "/dashboard/korea"
   return "/dashboard/editor"
+}
+
+export function useNavigation(role: Role) {
+  const t = useTranslations()
+  return {
+    sections: getNavConfig(t, role),
+    homeHref: homeFor(role),
+    roleLabel: t(ROLE_LABEL_KEYS[role]),
+  }
 }

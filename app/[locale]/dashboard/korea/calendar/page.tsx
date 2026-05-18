@@ -1,11 +1,13 @@
 import { requireRole } from "@/lib/auth-helpers"
 import { fetchBackend } from "@/lib/session"
+import { getTranslations } from "next-intl/server"
 import { PageHeader } from "@/components/shell/page-header"
 import { CalendarPanel } from "@/components/calendar/calendar-panel"
 import type { CalendarTask, CalendarEvent } from "@/components/calendar/calendar-week"
 
 export default async function KoreaCalendarPage() {
   await requireRole("KoreaTeam")
+  const t = await getTranslations()
 
   const month = new Date().toISOString().slice(0, 7)
 
@@ -24,9 +26,9 @@ export default async function KoreaCalendarPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Kalender"
-        title="Jadwal Tim"
-        description="Pantau deadline semua editor dalam satu tampilan."
+        eyebrow={t("nav.calendar")}
+        title={t("korea.calendarTitle")}
+        description={t("korea.calendarDesc")}
       />
       <CalendarPanel tasks={tasks} events={events} role="KoreaTeam" />
     </div>

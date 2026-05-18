@@ -1,5 +1,6 @@
 import { requireRole } from "@/lib/auth-helpers"
 import { fetchBackend } from "@/lib/session"
+import { getTranslations } from "next-intl/server"
 import { TaskItem } from "@/types/task"
 import KoreaTaskView from "./task-view"
 import { PageHeader } from "@/components/shell/page-header"
@@ -35,6 +36,7 @@ function startOfWeek() {
 
 export default async function KoreaDashboard() {
   const session = await requireRole("KoreaTeam")
+  const t = await getTranslations()
 
   let tasks: TaskItem[] = []
   let editors: UserItem[] = []
@@ -67,7 +69,7 @@ export default async function KoreaDashboard() {
       )
     }
   } catch {
-    fetchError = "Terjadi kesalahan koneksi"
+    fetchError = t("error.connectionError")
   }
 
   const pendingReviewTotal = tasks.filter(
@@ -95,9 +97,9 @@ export default async function KoreaDashboard() {
   return (
     <div className="space-y-10">
       <PageHeader
-        eyebrow="Korea Team"
-        title="Review desk"
-        description="Track editor status, review queue, and progress this week."
+        eyebrow={t("roles.KoreaTeam")}
+        title={t("korea.title")}
+        description={t("korea.desc")}
       />
 
       {fetchError && (
@@ -106,47 +108,45 @@ export default async function KoreaDashboard() {
         </div>
       )}
 
-      {/* Hero metric tiles */}
       <section className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          label="Pending review"
+          label={t("korea.pendingReview")}
           value={pendingReviewTotal}
           icon={<Eye />}
           tone={pendingReviewTotal > 0 ? "accent" : "default"}
         />
         <StatCard
-          label="Videos baru"
+          label={t("korea.newVideos")}
           value={pendingVideoTotal}
           icon={<Video />}
         />
         <StatCard
-          label="Editor online"
+          label={t("korea.editorsOnline")}
           value={onlineEditorCount}
           suffix={`/ ${editors.length}`}
           icon={<Activity />}
           tone="success"
         />
         <StatCard
-          label="Deadlines minggu ini"
+          label={t("korea.deadlinesThisWeek")}
           value={thisWeekDeadlines}
           icon={<Calendar />}
         />
       </section>
 
-      {/* Review queue */}
       {reviewQueue.length > 0 && (
         <section className="space-y-4">
           <div className="flex items-end justify-between">
             <h2 className="text-[11px] font-medium uppercase tracking-[0.2em] text-ink-muted">
-              Review queue
+              {t("korea.reviewQueue")}
             </h2>
             <p className="font-mono text-[11px] tabular-nums text-ink-muted">
               {pendingReviewTotal} total
             </p>
           </div>
           <div className="rounded-md border border-line bg-surface divide-y divide-line">
-            {reviewQueue.map((t) => {
-              const initials = t.assignee.name
+            {reviewQueue.map((task) => {
+              const initials = task.assignee.name
                 .split(" ")
                 .filter(Boolean)
                 .slice(0, 2)
@@ -154,7 +154,7 @@ export default async function KoreaDashboard() {
                 .join("")
               return (
                 <div
-                  key={t.id}
+                  key={task.id}
                   className="flex items-center gap-3 px-5 py-3.5"
                 >
                   <Avatar size="sm">
@@ -162,13 +162,13 @@ export default async function KoreaDashboard() {
                   </Avatar>
                   <div className="min-w-0 flex-1">
                     <p className="text-[13px] font-medium text-ink truncate">
-                      {t.title}
+                      {task.title}
                     </p>
                     <p className="text-[11px] text-ink-muted">
-                      Dikirim oleh {t.assignee.name}
+                      {t("korea.submittedBy", { name: task.assignee.name })}
                     </p>
                   </div>
-                  <StatusPill status={t.status} size="sm" />
+                  <StatusPill status={task.status} size="sm" />
                 </div>
               )
             })}
@@ -176,11 +176,10 @@ export default async function KoreaDashboard() {
         </section>
       )}
 
-      {/* Mini chart: tasks completed per editor this week */}
       {editorCompletions.some((e) => e.value > 0) && (
         <section className="space-y-4">
           <h2 className="text-[11px] font-medium uppercase tracking-[0.2em] text-ink-muted">
-            Selesai minggu ini · per editor
+            {t("korea.completedThisWeek")}
           </h2>
           <div className="rounded-md border border-line bg-surface p-5">
             <MiniBar data={editorCompletions} height={140} showAxis />
@@ -188,11 +187,10 @@ export default async function KoreaDashboard() {
         </section>
       )}
 
-      {/* Editor status sidebar (full row) */}
       {editors.length > 0 && (
         <section className="space-y-4">
           <h2 className="text-[11px] font-medium uppercase tracking-[0.2em] text-ink-muted">
-            Editor status
+            {t("korea.editorStatus")}
           </h2>
           <div className="rounded-md border border-line bg-surface divide-y divide-line">
             {editors.map((ed) => {
@@ -213,7 +211,7 @@ export default async function KoreaDashboard() {
                       <span className="font-mono tabular-nums">
                         {editorTasks.length}
                       </span>{" "}
-                      task aktif
+                      {t("korea.activeTasks")}
                     </p>
                   </div>
                   <div className="flex items-center gap-2 text-[11px] text-ink-secondary">
@@ -224,7 +222,7 @@ export default async function KoreaDashboard() {
                           : "size-2 rounded-full bg-ink-muted/40"
                       }
                     />
-                    {inOffice ? "Online" : "Offline"}
+                    {inOffice ? t("admin.online") : t("admin.offline")}
                   </div>
                 </div>
               )

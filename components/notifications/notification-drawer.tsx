@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react"
 import { createPortal } from "react-dom"
+import { useTranslations } from "next-intl"
 import { X, CheckCheck, Inbox } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
@@ -12,28 +13,6 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 interface NotificationDrawerProps {
   open: boolean
   onClose: () => void
-}
-
-const TYPE_LABEL: Record<string, string> = {
-  task_assigned: "Task baru",
-  task_status: "Status",
-  task_progress: "Progress",
-  task_deleted: "Task dihapus",
-  task_reassigned: "Reassign",
-  task_on_hold: "On Hold",
-  task_started: "Mulai dikerjakan",
-  revision: "Revisi",
-  video_uploaded: "Video baru",
-  video_reviewed: "Video direview",
-  comment: "Komentar",
-  asset_uploaded: "Aset baru",
-  call_invited: "Panggilan",
-  user_created: "Akun baru",
-  user_deleted: "Akun dihapus",
-  clock_in: "Clock In",
-  clock_out: "Clock Out",
-  deadline_warning: "Deadline",
-  weekly_report: "Laporan",
 }
 
 const TYPE_COLOR: Record<string, string> = {
@@ -58,23 +37,23 @@ const TYPE_COLOR: Record<string, string> = {
   weekly_report: "bg-status-completed",
 }
 
-function timeAgo(iso: string) {
-  const t = new Date(iso).getTime()
-  const diff = Date.now() - t
+function timeAgo(iso: string, t: ReturnType<typeof useTranslations>) {
+  const ts = new Date(iso).getTime()
+  const diff = Date.now() - ts
   const m = Math.floor(diff / 60000)
-  if (m < 1) return "baru saja"
-  if (m < 60) return `${m}m`
+  if (m < 1) return t("notifications.justNow")
+  if (m < 60) return t("notifications.minAgo", { n: m })
   const h = Math.floor(m / 60)
-  if (h < 24) return `${h}j`
+  if (h < 24) return t("notifications.hourAgo", { n: h })
   const d = Math.floor(h / 24)
-  if (d < 7) return `${d}h`
+  if (d < 7) return t("notifications.hoursAgo", { n: d })
   return new Date(iso).toLocaleDateString("id-ID", {
     day: "numeric",
     month: "short",
   })
 }
 
-function groupByDay(notifs: NotificationItem[]) {
+function groupByDay(notifs: NotificationItem[], t: ReturnType<typeof useTranslations>) {
   const groups: { label: string; items: NotificationItem[] }[] = []
   const todayKey = new Date().toDateString()
   const yKey = new Date(Date.now() - 86400000).toDateString()
@@ -90,8 +69,8 @@ function groupByDay(notifs: NotificationItem[]) {
 
   for (const [key, items] of map) {
     let label: string
-    if (key === todayKey) label = "Hari ini"
-    else if (key === yKey) label = "Kemarin"
+    if (key === todayKey) label = t("notifications.today")
+    else if (key === yKey) label = t("notifications.yesterday")
     else
       label = new Date(key).toLocaleDateString("id-ID", {
         weekday: "long",
@@ -104,6 +83,7 @@ function groupByDay(notifs: NotificationItem[]) {
 }
 
 export function NotificationDrawer({ open, onClose }: NotificationDrawerProps) {
+  const t = useTranslations()
   const { notifications, unreadCount, loading, markRead, markAllRead } =
     useNotifications()
   const [tab, setTab] = useState<"unread" | "all">(unreadCount > 0 ? "unread" : "all")
@@ -114,12 +94,11 @@ export function NotificationDrawer({ open, onClose }: NotificationDrawerProps) {
     return notifications
   }, [notifications, tab])
 
-  const groups = useMemo(() => groupByDay(visible), [visible])
+  const groups = useMemo(() => groupByDay(visible, t), [visible, t])
 
   function handleClick(n: NotificationItem) {
     if (!n.isRead) markRead(n.id)
     if (n.taskId) {
-      // navigate to a tasks page with selected task. Editor-specific path is fine for now.
       router.push(`/dashboard/notifications?task=${n.taskId}`)
     }
     onClose()
@@ -136,7 +115,7 @@ export function NotificationDrawer({ open, onClose }: NotificationDrawerProps) {
       />
       <aside
         role="dialog"
-        aria-label="Notifications"
+        aria-label={t("notifications.ariaNotifications")}
         className={cn(
           "absolute inset-y-0 right-0 w-full max-w-md bg-surface border-l border-line",
           "flex flex-col shadow-lg",
@@ -147,15 +126,15 @@ export function NotificationDrawer({ open, onClose }: NotificationDrawerProps) {
         <div className="px-5 pt-5 pb-3 flex items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-ink-muted">
-              Inbox
+              {t("notifications.inbox")}
             </p>
             <h2 className="mt-1.5 font-display italic text-3xl text-ink leading-[1.05]">
-              Notifications
+              {t("notifications.title")}
             </h2>
             <p className="mt-1 text-[11px] text-ink-secondary">
               {unreadCount > 0
-                ? `${unreadCount} belum dibaca`
-                : "Semua sudah dibaca"}
+                ? `${unreadCount} ${t("notifications.unread").toLowerCase()}`
+                : t("notifications.inboxClean")}
             </p>
           </div>
           <div className="flex items-center gap-1 shrink-0">
@@ -163,16 +142,16 @@ export function NotificationDrawer({ open, onClose }: NotificationDrawerProps) {
               <button
                 onClick={markAllRead}
                 className="inline-flex items-center gap-1.5 rounded-xs px-2 py-1 text-[11px] text-ink-secondary hover:text-ink hover:bg-subtle transition-colors"
-                aria-label="Mark all as read"
+                aria-label={t("notifications.ariaMarkAllRead")}
               >
                 <CheckCheck className="size-3.5" />
-                Mark all read
+                {t("notifications.markAllRead")}
               </button>
             )}
             <button
               onClick={onClose}
               className="size-8 inline-flex items-center justify-center rounded-sm text-ink-muted hover:text-ink hover:bg-subtle transition-colors"
-              aria-label="Close"
+              aria-label={t("notifications.ariaClose")}
             >
               <X className="size-4" />
             </button>
@@ -184,7 +163,7 @@ export function NotificationDrawer({ open, onClose }: NotificationDrawerProps) {
           <Tabs value={tab} onValueChange={(v) => setTab(v as "unread" | "all")}>
             <TabsList variant="line">
               <TabsTrigger value="unread" className="text-[12px]">
-                Unread
+                {t("notifications.unread")}
                 {unreadCount > 0 && (
                   <span
                     className={cn(
@@ -199,7 +178,7 @@ export function NotificationDrawer({ open, onClose }: NotificationDrawerProps) {
                 )}
               </TabsTrigger>
               <TabsTrigger value="all" className="text-[12px]">
-                All
+                {t("notifications.all")}
               </TabsTrigger>
             </TabsList>
             <TabsContent value="unread" />
@@ -219,11 +198,11 @@ export function NotificationDrawer({ open, onClose }: NotificationDrawerProps) {
             <div className="p-5">
               <EmptyState
                 icon={<Inbox />}
-                title={tab === "unread" ? "Inbox bersih" : "Belum ada notifikasi"}
+                title={tab === "unread" ? t("notifications.inboxClean") : t("notifications.noNotifications")}
                 description={
                   tab === "unread"
-                    ? "Tidak ada notifikasi yang belum dibaca."
-                    : "Notifikasi akan muncul di sini ketika ada aktivitas."
+                    ? t("notifications.noUnreadDesc")
+                    : t("notifications.notificationsAppear")
                 }
                 size="sm"
               />
@@ -266,7 +245,7 @@ export function NotificationDrawer({ open, onClose }: NotificationDrawerProps) {
                               {n.title}
                             </p>
                             <span className="ml-auto text-[10px] font-mono text-ink-muted shrink-0">
-                              {timeAgo(n.createdAt)}
+                              {timeAgo(n.createdAt, t)}
                             </span>
                           </div>
                           <p
@@ -277,11 +256,9 @@ export function NotificationDrawer({ open, onClose }: NotificationDrawerProps) {
                           >
                             {n.body}
                           </p>
-                          {TYPE_LABEL[n.type] && (
-                            <span className="mt-1.5 inline-block text-[9px] font-medium uppercase tracking-wider text-ink-muted">
-                              {TYPE_LABEL[n.type]}
-                            </span>
-                          )}
+                          <span className="mt-1.5 inline-block text-[9px] font-medium uppercase tracking-wider text-ink-muted">
+                            {t(`notifications.types.${n.type}`)}
+                          </span>
                         </div>
                       </button>
                     ))}

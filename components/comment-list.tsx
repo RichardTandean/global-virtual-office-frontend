@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -44,6 +45,7 @@ function CommentNode({
   currentUserRole,
   onSeekVideo,
   onDeleted,
+  t,
 }: {
   comment: CommentItem
   depth: number
@@ -53,6 +55,7 @@ function CommentNode({
   currentUserRole: string
   onSeekVideo?: (seconds: number) => void
   onDeleted: (id: string) => void
+  t: ReturnType<typeof useTranslations>
 }) {
   const [showReply, setShowReply] = useState(false)
   const [open, setOpen] = useState(depth < 2)
@@ -65,12 +68,7 @@ function CommentNode({
     .toUpperCase()
     .slice(0, 2)
 
-  const roleLabel =
-    comment.user.role === "KoreaTeam"
-      ? "Korea"
-      : comment.user.role === "Admin"
-      ? "Admin"
-      : "Editor"
+  const roleLabel = t(`roles.${comment.user.role}`)
 
   return (
     <div className={depth > 0 ? "ml-7" : ""}>
@@ -109,7 +107,7 @@ function CommentNode({
               >
                 {formatTimestamp(comment.timestampSeconds)}
               </TooltipTrigger>
-              <TooltipContent>Klik untuk lompat ke bagian video ini</TooltipContent>
+              <TooltipContent>{t("comments.jumpToVideo")}</TooltipContent>
             </Tooltip>
           )}
 
@@ -124,7 +122,7 @@ function CommentNode({
                 className="inline-flex items-center gap-1 rounded-xs px-1.5 py-0.5 text-[10px] text-ink-secondary hover:text-ink hover:bg-subtle transition-colors"
               >
                 <CornerDownRight className="size-2.5" />
-                Balas
+                {t("comments.reply")}
               </button>
             )}
 
@@ -136,7 +134,7 @@ function CommentNode({
                   })
                   if (res.ok) {
                     onDeleted(comment.id)
-                    toast.success("Komentar dihapus")
+                    toast.success(t("comments.commentDeleted"))
                   }
                 }}
                 className={cn(
@@ -145,7 +143,7 @@ function CommentNode({
                 )}
               >
                 <Trash2 className="size-2.5" />
-                Hapus
+                {t("comments.deleteComment")}
               </button>
             )}
           </div>
@@ -156,7 +154,7 @@ function CommentNode({
                 taskId={taskId}
                 videoSubmissionId={videoSubmissionId}
                 parentId={comment.id}
-                placeholder="Tulis balasan..."
+                placeholder={t("comments.writeReply")}
                 onCommentAdded={() => {
                   setShowReply(false)
                 }}
@@ -182,6 +180,7 @@ function CommentNode({
                   currentUserRole={currentUserRole}
                   onSeekVideo={onSeekVideo}
                   onDeleted={onDeleted}
+                  t={t}
                 />
               ))}
             </>
@@ -189,7 +188,9 @@ function CommentNode({
             <>
               <CollapsibleTrigger className="inline-flex items-center gap-1 rounded-xs px-2 py-1 text-[10px] ml-7 cursor-pointer text-ink-secondary hover:text-ink hover:bg-subtle transition-colors">
                 <ChevronDown className="size-2.5" />
-                {open ? "Sembunyikan" : "Lihat"} {comment.replies.length} balasan
+                {open
+                  ? t("comments.hideReplies")
+                  : t("comments.showReplies", { n: comment.replies.length })}
               </CollapsibleTrigger>
               <CollapsibleContent>
                 {comment.replies.map((reply) => (
@@ -203,6 +204,7 @@ function CommentNode({
                     currentUserRole={currentUserRole}
                     onSeekVideo={onSeekVideo}
                     onDeleted={onDeleted}
+                    t={t}
                   />
                 ))}
               </CollapsibleContent>
@@ -222,6 +224,7 @@ export default function CommentList({
   onSeekVideo,
   compact,
 }: CommentListProps) {
+  const t = useTranslations()
   const [comments, setComments] = useState<CommentItem[]>([])
   const [loading, setLoading] = useState(true)
   const [removedIds, setRemovedIds] = useState<Set<string>>(new Set())
@@ -266,10 +269,7 @@ export default function CommentList({
       <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.2em] text-ink-muted">
         <MessageSquare className="size-3.5" />
         <span>
-          Komentar{" "}
-          <span className="font-mono tabular-nums text-ink-secondary">
-            {filtered.length}
-          </span>
+          {t("comments.commentsCount", { n: filtered.length })}
         </span>
       </div>
 
@@ -287,7 +287,7 @@ export default function CommentList({
         </div>
       ) : visibleTree.length === 0 ? (
         <p className="text-center py-6 text-[12px] text-ink-muted">
-          Belum ada komentar
+          {t("comments.noComments")}
         </p>
       ) : (
         <ScrollArea
@@ -304,6 +304,7 @@ export default function CommentList({
               currentUserRole={currentUserRole}
               onSeekVideo={onSeekVideo}
               onDeleted={handleDeleted}
+              t={t}
             />
           ))}
         </ScrollArea>

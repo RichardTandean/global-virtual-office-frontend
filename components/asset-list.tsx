@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback, useRef } from "react"
+import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { toast } from "sonner"
@@ -15,6 +16,7 @@ interface AssetListProps {
 }
 
 export default function AssetList({ taskId, role, userId }: AssetListProps) {
+  const t = useTranslations()
   const [assets, setAssets] = useState<AssetItem[]>([])
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
@@ -54,7 +56,7 @@ export default function AssetList({ taskId, role, userId }: AssetListProps) {
           taskId,
         }),
       })
-      if (!presignedRes.ok) throw new Error("Gagal mendapatkan upload URL")
+      if (!presignedRes.ok) throw new Error(t("assets.uploadUrlFailed"))
       const { signedUrl, key } = await presignedRes.json()
 
       const uploadRes = await fetch(signedUrl, {
@@ -62,7 +64,7 @@ export default function AssetList({ taskId, role, userId }: AssetListProps) {
         body: file,
         headers: { "Content-Type": file.type },
       })
-      if (!uploadRes.ok) throw new Error("Upload gagal")
+      if (!uploadRes.ok) throw new Error(t("assets.uploadFailed"))
 
       const confirmRes = await fetch("/api/assets/confirm", {
         method: "POST",
@@ -75,13 +77,13 @@ export default function AssetList({ taskId, role, userId }: AssetListProps) {
           label: file.name,
         }),
       })
-      if (!confirmRes.ok) throw new Error("Gagal konfirmasi upload")
+      if (!confirmRes.ok) throw new Error(t("assets.uploadFailed"))
 
       const asset = await confirmRes.json()
       setAssets((prev) => [asset, ...prev])
-      toast.success("Materi berhasil diupload!")
+      toast.success(t("assets.uploaded"))
     } catch (err: any) {
-      toast.error(err.message || "Gagal upload")
+      toast.error(err.message || t("assets.uploadFailed"))
     } finally {
       setUploading(false)
       if (fileRef.current) fileRef.current.value = ""
@@ -92,7 +94,7 @@ export default function AssetList({ taskId, role, userId }: AssetListProps) {
     const res = await fetch(`/api/assets/${id}`, { method: "DELETE" })
     if (res.ok) {
       setAssets((prev) => prev.filter((a) => a.id !== id))
-      toast.success("Materi dihapus")
+      toast.success(t("assets.deleted"))
     }
   }
 
@@ -102,10 +104,7 @@ export default function AssetList({ taskId, role, userId }: AssetListProps) {
         <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.2em] text-ink-muted">
           <Paperclip className="size-3.5" />
           <span>
-            Materi referensi{" "}
-            <span className="font-mono tabular-nums text-ink-secondary">
-              {assets.length}
-            </span>
+            {t("assets.sectionTitle", { n: assets.length })}
           </span>
         </div>
 
@@ -123,7 +122,7 @@ export default function AssetList({ taskId, role, userId }: AssetListProps) {
           disabled={uploading}
         >
           <Upload />
-          {uploading ? "Uploading..." : "Upload"}
+          {uploading ? t("common.uploading") : t("common.upload")}
         </Button>
       </div>
 
@@ -135,7 +134,7 @@ export default function AssetList({ taskId, role, userId }: AssetListProps) {
         </div>
       ) : assets.length === 0 ? (
         <div className="rounded-md border border-dashed border-line bg-subtle/30 px-4 py-6 text-center">
-          <p className="text-[11px] text-ink-muted">Belum ada materi referensi</p>
+          <p className="text-[11px] text-ink-muted">{t("assets.noAssets")}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -149,7 +148,7 @@ export default function AssetList({ taskId, role, userId }: AssetListProps) {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-[12px] font-medium text-ink truncate">
-                  {asset.label || "File"}
+                  {asset.label || t("assets.fileFallback")}
                 </p>
                 <p className="text-[10px] font-mono tabular-nums text-ink-muted">
                   {formatFileSize(asset.fileSize)} ·{" "}
@@ -165,7 +164,7 @@ export default function AssetList({ taskId, role, userId }: AssetListProps) {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="size-7 inline-flex items-center justify-center rounded-xs text-ink-muted hover:text-ink hover:bg-subtle transition-colors"
-                  aria-label="Download"
+                  aria-label={t("assets.downloadAria")}
                 >
                   <Download className="size-3.5" />
                 </a>
@@ -178,7 +177,7 @@ export default function AssetList({ taskId, role, userId }: AssetListProps) {
                       "size-7 inline-flex items-center justify-center rounded-xs transition-colors",
                       "text-ink-muted hover:text-status-danger hover:bg-status-danger/10"
                     )}
-                    aria-label="Delete"
+                    aria-label={t("common.delete")}
                   >
                     <Trash2 className="size-3.5" />
                   </button>

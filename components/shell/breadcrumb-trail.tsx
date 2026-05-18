@@ -3,28 +3,31 @@
 import { usePathname } from "next/navigation"
 import Link from "next/link"
 import { ChevronRight } from "lucide-react"
+import { useTranslations } from "next-intl"
 
-const SEGMENT_LABELS: Record<string, string> = {
-  dashboard: "Dashboard",
-  editor: "Editor",
-  korea: "Korea Team",
-  admin: "Admin",
-  tasks: "Tasks",
-  calendar: "Calendar",
-  notifications: "Notifications",
-  reports: "Reports",
-}
-
-function labelFor(seg: string) {
-  return SEGMENT_LABELS[seg] || seg.charAt(0).toUpperCase() + seg.slice(1)
+const SEGMENT_KEY_MAP: Record<string, string> = {
+  dashboard: "dashboard",
+  editor: "editor",
+  korea: "koreaTeam",
+  admin: "admin",
+  tasks: "tasks",
+  calendar: "calendar",
+  notifications: "notifications",
+  reports: "reports",
 }
 
 export function BreadcrumbTrail() {
+  const t = useTranslations()
   const pathname = usePathname() || ""
   const segments = pathname.split("/").filter(Boolean)
 
-  // Hide breadcrumb for top-level dashboard root pages (just title is enough)
   if (segments.length <= 2) return null
+
+  function labelFor(seg: string) {
+    const mapped = SEGMENT_KEY_MAP[seg]
+    if (mapped) return t(`breadcrumb.${mapped}`)
+    return seg.charAt(0).toUpperCase() + seg.slice(1)
+  }
 
   const crumbs = segments.map((seg, i) => ({
     label: labelFor(seg),
@@ -34,7 +37,7 @@ export function BreadcrumbTrail() {
 
   return (
     <nav
-      aria-label="Breadcrumb"
+      aria-label={t("breadcrumb.label")}
       className="hidden md:flex items-center gap-1 text-[12px] text-ink-muted"
     >
       {crumbs.map((c, i) => (

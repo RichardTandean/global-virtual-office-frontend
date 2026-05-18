@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -28,13 +29,14 @@ interface EventDialogProps {
   editEvent?: CalendarEvent | null
 }
 
-const EVENT_TYPES = [
-  { value: "holiday", label: "Holiday" },
-  { value: "event", label: "Event" },
-  { value: "meeting", label: "Meeting" },
+const EVENT_TYPE_KEYS = [
+  { value: "holiday", key: "calendar.holiday" },
+  { value: "event", key: "calendar.event" },
+  { value: "meeting", key: "calendar.meeting" },
 ]
 
 export function EventDialog({ open, onOpenChange, onSaved, editEvent }: EventDialogProps) {
+  const t = useTranslations()
   const isEdit = !!editEvent
 
   const [title, setTitle] = useState("")
@@ -70,7 +72,7 @@ export function EventDialog({ open, onOpenChange, onSaved, editEvent }: EventDia
 
   async function handleSubmit() {
     if (!title.trim() || !date) {
-      toast.error("Judul dan tanggal wajib diisi")
+      toast.error(t("calendar.titleRequired"))
       return
     }
 
@@ -101,16 +103,16 @@ export function EventDialog({ open, onOpenChange, onSaved, editEvent }: EventDia
       })
 
       if (res.ok) {
-        toast.success(isEdit ? "Event berhasil diupdate" : "Event berhasil ditambahkan")
+        toast.success(isEdit ? t("calendar.eventSaved") : t("calendar.eventAdded"))
         onOpenChange(false)
         reset()
         onSaved()
       } else {
         const data = await res.json().catch(() => ({}))
-        toast.error(data.message || "Gagal menyimpan event")
+        toast.error(data.message || t("calendar.saveFailed"))
       }
     } catch {
-      toast.error("Gagal menyimpan event")
+      toast.error(t("calendar.saveFailed"))
     } finally {
       setSubmitting(false)
     }
@@ -123,16 +125,16 @@ export function EventDialog({ open, onOpenChange, onSaved, editEvent }: EventDia
     try {
       const res = await fetch(`/api/events/${editEvent.id}`, { method: "DELETE" })
       if (res.ok) {
-        toast.success("Event berhasil dihapus")
+        toast.success(t("calendar.eventDeleted"))
         onOpenChange(false)
         reset()
         onSaved()
       } else {
         const data = await res.json().catch(() => ({}))
-        toast.error(data.message || "Gagal menghapus event")
+        toast.error(data.message || t("calendar.deleteFailed"))
       }
     } catch {
-      toast.error("Gagal menghapus event")
+      toast.error(t("calendar.deleteFailed"))
     } finally {
       setSubmitting(false)
     }
@@ -149,50 +151,50 @@ export function EventDialog({ open, onOpenChange, onSaved, editEvent }: EventDia
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-base flex items-center gap-2">
-            {isEdit ? "Edit Event" : "Tambah Event"}
+            {isEdit ? t("calendar.editEvent") : t("calendar.addEvent")}
           </DialogTitle>
           <DialogDescription>
             {isEdit
-              ? "Edit atau hapus event yang sudah ada."
-              : "Buat event, holiday, atau meeting baru."}
+              ? t("calendar.editOrDelete")
+              : t("calendar.createNew")}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-1">
-            <Label className="text-xs">Tipe</Label>
+            <Label className="text-xs">{t("calendar.type")}</Label>
             <Select value={type} onValueChange={(v) => setType(v as typeof type)}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {EVENT_TYPES.map((t) => (
-                  <SelectItem key={t.value} value={t.value}>
-                    {t.label}
+                {EVENT_TYPE_KEYS.map((et) => (
+                  <SelectItem key={et.value} value={et.value}>
+                    {t(et.key)}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
           <div className="space-y-1">
-            <Label className="text-xs">Judul</Label>
+            <Label className="text-xs">{t("calendar.title")}</Label>
             <Input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Nama event atau holiday"
+              placeholder={t("calendar.titlePlaceholder")}
               autoFocus
             />
           </div>
           <div className="space-y-1">
-            <Label className="text-xs">Deskripsi (opsional)</Label>
+            <Label className="text-xs">{t("calendar.descriptionOptional")}</Label>
             <Input
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Detail event"
+              placeholder={t("calendar.descriptionPlaceholder")}
             />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
-              <Label className="text-xs">Tanggal Mulai</Label>
+              <Label className="text-xs">{t("calendar.startDate")}</Label>
               <Input
                 type="date"
                 value={date}
@@ -200,12 +202,12 @@ export function EventDialog({ open, onOpenChange, onSaved, editEvent }: EventDia
               />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs">Tanggal Selesai</Label>
+              <Label className="text-xs">{t("calendar.endDate")}</Label>
               <Input
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                placeholder="Opsional"
+                placeholder={t("common.optional")}
               />
             </div>
           </div>
@@ -215,14 +217,18 @@ export function EventDialog({ open, onOpenChange, onSaved, editEvent }: EventDia
               className="flex-1"
               onClick={() => onOpenChange(false)}
             >
-              Batal
+              {t("common.cancel")}
             </Button>
             <Button
               className="flex-1 gap-1.5"
               onClick={handleSubmit}
               disabled={submitting}
             >
-              {submitting ? "Menyimpan..." : isEdit ? "Update" : "Tambah"}
+              {submitting
+                ? t("common.saving")
+                : isEdit
+                  ? t("common.update")
+                  : t("common.submit")}
             </Button>
           </div>
           {isEdit && (
@@ -232,7 +238,7 @@ export function EventDialog({ open, onOpenChange, onSaved, editEvent }: EventDia
               onClick={handleDelete}
               disabled={submitting}
             >
-              {submitting ? "Menghapus..." : "Hapus Event"}
+              {submitting ? t("common.deleting") : t("calendar.deleteEvent")}
             </Button>
           )}
         </div>

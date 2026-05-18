@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useTranslations } from "next-intl"
 import { TrendingUp } from "lucide-react"
 import { MetricNumber } from "@/components/ui/metric-number"
 
@@ -17,6 +18,7 @@ function formatHours(minutes: number) {
 }
 
 export function EditorWeeklyCard() {
+  const t = useTranslations()
   const [report, setReport] = useState<WeeklyReport | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -50,14 +52,14 @@ export function EditorWeeklyCard() {
     <div className="rounded-lg border border-line bg-surface p-5 flex flex-col justify-between">
       <div className="flex items-center justify-between">
         <p className="text-[10px] font-medium uppercase tracking-[0.2em] text-ink-muted">
-          Minggu ini
+          {t("reports.thisWeek")}
         </p>
         <TrendingUp className="size-3.5 text-ink-muted" />
       </div>
       <div className="grid grid-cols-2 gap-4 mt-3">
         <div className="space-y-1.5">
           <p className="text-[10px] font-medium uppercase tracking-wider text-ink-muted">
-            Jam kerja
+            {t("reports.hoursCol")}
           </p>
           <div className="flex items-baseline gap-1">
             <MetricNumber value={hours.value} size="md" italic />
@@ -68,7 +70,7 @@ export function EditorWeeklyCard() {
         </div>
         <div className="space-y-1.5">
           <p className="text-[10px] font-medium uppercase tracking-wider text-ink-muted">
-            Task selesai
+            {t("reports.tasksCol")}
           </p>
           <MetricNumber value={report.tasksCompleted} size="md" italic />
         </div>
