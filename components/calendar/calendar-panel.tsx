@@ -2,11 +2,13 @@
 
 import { useCallback } from "react"
 import { useRouter } from "next/navigation"
-import { CalendarWeek, type CalendarTask } from "./calendar-week"
+import { CalendarWeek, type CalendarTask, type CalendarEvent } from "./calendar-week"
 
 interface CalendarPanelProps {
   tasks: CalendarTask[]
+  events: CalendarEvent[]
   role: "Editor" | "KoreaTeam" | "Admin"
+  onEventClick?: (event: CalendarEvent) => void
 }
 
 const ROLE_BASE: Record<CalendarPanelProps["role"], string> = {
@@ -15,7 +17,7 @@ const ROLE_BASE: Record<CalendarPanelProps["role"], string> = {
   Admin: "/dashboard/admin",
 }
 
-export function CalendarPanel({ tasks, role }: CalendarPanelProps) {
+export function CalendarPanel({ tasks, events, role, onEventClick }: CalendarPanelProps) {
   const router = useRouter()
 
   const handleClick = useCallback(
@@ -25,5 +27,13 @@ export function CalendarPanel({ tasks, role }: CalendarPanelProps) {
     [router, role],
   )
 
-  return <CalendarWeek tasks={tasks} role={role} onTaskClick={handleClick} />
+  return (
+    <CalendarWeek
+      tasks={tasks}
+      events={events}
+      role={role}
+      onTaskClick={handleClick}
+      onEventClick={onEventClick}
+    />
+  )
 }

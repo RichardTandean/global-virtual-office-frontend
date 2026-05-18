@@ -23,10 +23,24 @@ export interface CalendarTask {
   assignee: { id: string; name: string }
 }
 
+export interface CalendarEvent {
+  id: string
+  title: string
+  description: string | null
+  type: "holiday" | "event" | "meeting"
+  date: string
+  endDate: string | null
+  isAllDay: boolean
+  color: string | null
+  createdBy: string
+}
+
 interface CalendarWeekProps {
   tasks: CalendarTask[]
+  events?: CalendarEvent[]
   role: "Editor" | "KoreaTeam" | "Admin"
   onTaskClick?: (task: CalendarTask) => void
+  onEventClick?: (event: CalendarEvent) => void
 }
 
 const DAY_LABELS = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"]
@@ -70,7 +84,21 @@ function dayKey(d: Date) {
   return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`
 }
 
-export function CalendarWeek({ tasks, role, onTaskClick }: CalendarWeekProps) {
+const EVENT_COLORS: Record<string, string> = {
+  holiday: "bg-status-danger/10 border-status-danger/20 text-status-danger",
+  event: "bg-accent/10 border-accent/30 text-accent",
+  meeting: "bg-status-success/10 border-status-success/20 text-status-success",
+}
+
+function eventLabel(type: string) {
+  switch (type) {
+    case "holiday": return "Libur"
+    case "meeting": return "Meeting"
+    default: return "Event"
+  }
+}
+
+export function CalendarWeek({ tasks, events, role, onTaskClick, onEventClick }: CalendarWeekProps) {
   const [view, setView] = useState<"week" | "month">("week")
   const [anchor, setAnchor] = useState<Date>(() => new Date())
   const [statusFilter, setStatusFilter] = useState<string>("active")
@@ -118,6 +146,24 @@ export function CalendarWeek({ tasks, role, onTaskClick }: CalendarWeekProps) {
     }
     return map
   }, [filteredTasks])
+
+  const eventsByDay = useMemo(() => {
+    const map = new Map<string, CalendarEvent[]>()
+    if (!events) return map
+    for (const e of events) {
+      const start = new Date(e.date)
+      const end = e.endDate ? new Date(e.endDate) : start
+      const cursor = new Date(start)
+      while (cursor <= end) {
+        const key = dayKey(cursor)
+        const arr = map.get(key) || []
+        arr.push(e)
+        map.set(key, arr)
+        cursor.setDate(cursor.getDate() + 1)
+      }
+    }
+    return map
+  }, [events])
 
   const weekDays = useMemo(() => {
     const start = startOfWeek(anchor)
@@ -256,7 +302,9 @@ export function CalendarWeek({ tasks, role, onTaskClick }: CalendarWeekProps) {
             days={weekDays}
             today={today}
             tasksByDay={tasksByDay}
+            eventsByDay={eventsByDay}
             onTaskClick={onTaskClick}
+            onEventClick={onEventClick}
           />
         ) : (
           <MonthGrid
@@ -264,7 +312,9 @@ export function CalendarWeek({ tasks, role, onTaskClick }: CalendarWeekProps) {
             anchor={anchor}
             today={today}
             tasksByDay={tasksByDay}
+            eventsByDay={eventsByDay}
             onTaskClick={onTaskClick}
+            onEventClick={onEventClick}
           />
         )}
       </div>
@@ -284,17 +334,22 @@ function WeekGrid({
   days,
   today,
   tasksByDay,
+  eventsByDay,
   onTaskClick,
+  onEventClick,
 }: {
   days: Date[]
   today: Date
   tasksByDay: Map<string, CalendarTask[]>
+  eventsByDay: Map<string, CalendarEvent[]>
   onTaskClick?: (task: CalendarTask) => void
+  onEventClick?: (event: CalendarEvent) => void
 }) {
   return (
     <div className="grid grid-cols-7 divide-x divide-line">
       {days.map((d, i) => {
         const items = tasksByDay.get(dayKey(d)) || []
+        const evts = eventsByDay.get(dayKey(d)) || []
         const isToday = isSameDay(d, today)
         const isWeekend = d.getDay() === 0 || d.getDay() === 6
         return (
@@ -321,6 +376,19 @@ function WeekGrid({
               </span>
             </div>
             <div className="flex flex-col gap-1.5">
+              {evts.map((e) => (
+                <button
+                  key={e.id}
+                  onClick={() => onEventClick?.(e)}
+                  className={cn(
+                    "rounded-xs border px-1.5 py-0.5 text-[10px] font-medium text-left truncate hover:opacity-80 transition-opacity",
+                    EVENT_COLORS[e.type] || EVENT_COLORS.event,
+                  )}
+                  title={`${eventLabel(e.type)}: ${e.title}`}
+                >
+                  {e.title}
+                </button>
+              ))}
               {items.slice(0, 6).map((t) => (
                 <button
                   key={t.id}
@@ -355,13 +423,17 @@ function MonthGrid({
   anchor,
   today,
   tasksByDay,
+  eventsByDay,
   onTaskClick,
+  onEventClick,
 }: {
   days: Date[]
   anchor: Date
   today: Date
   tasksByDay: Map<string, CalendarTask[]>
+  eventsByDay: Map<string, CalendarEvent[]>
   onTaskClick?: (task: CalendarTask) => void
+  onEventClick?: (event: CalendarEvent) => void
 }) {
   return (
     <div>
@@ -378,6 +450,7 @@ function MonthGrid({
       <div className="grid grid-cols-7 grid-rows-6 divide-x divide-y divide-line">
         {days.map((d, i) => {
           const items = tasksByDay.get(dayKey(d)) || []
+          const evts = eventsByDay.get(dayKey(d)) || []
           const isToday = isSameDay(d, today)
           const inMonth = d.getMonth() === anchor.getMonth()
           return (
@@ -399,6 +472,19 @@ function MonthGrid({
                 {d.getDate()}
               </div>
               <div className="flex flex-col gap-0.5">
+                {evts.map((e) => (
+                  <button
+                    key={e.id}
+                    onClick={() => onEventClick?.(e)}
+                    className={cn(
+                      "rounded-xs px-1 py-0.5 text-[9px] font-medium text-left truncate hover:opacity-80 transition-opacity",
+                      EVENT_COLORS[e.type] || EVENT_COLORS.event,
+                    )}
+                    title={`${eventLabel(e.type)}: ${e.title}`}
+                  >
+                    {e.title}
+                  </button>
+                ))}
                 {items.slice(0, 3).map((t) => (
                   <button
                     key={t.id}

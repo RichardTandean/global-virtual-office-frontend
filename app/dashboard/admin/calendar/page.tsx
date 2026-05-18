@@ -1,11 +1,12 @@
 import { requireRole } from "@/lib/auth-helpers"
 import { fetchBackend } from "@/lib/session"
-import { PageHeader } from "@/components/shell/page-header"
-import { CalendarPanel } from "@/components/calendar/calendar-panel"
-import type { CalendarTask } from "@/components/calendar/calendar-week"
+import { AdminCalendarClient } from "./admin-calendar-client"
+import type { CalendarTask, CalendarEvent } from "@/components/calendar/calendar-week"
 
 export default async function AdminCalendarPage() {
   await requireRole("Admin")
+
+  const month = new Date().toISOString().slice(0, 7)
 
   let tasks: CalendarTask[] = []
   try {
@@ -13,14 +14,17 @@ export default async function AdminCalendarPage() {
     if (res.ok) tasks = await res.json()
   } catch {}
 
+  let events: CalendarEvent[] = []
+  try {
+    const res = await fetchBackend(`/events?month=${month}`)
+    if (res.ok) events = await res.json()
+  } catch {}
+
   return (
-    <div className="space-y-6">
-      <PageHeader
-        eyebrow="Kalender"
-        title="Operasi Tim"
-        description="Tinjau deadline semua role dan tim secara keseluruhan."
-      />
-      <CalendarPanel tasks={tasks} role="Admin" />
-    </div>
+    <AdminCalendarClient
+      initialTasks={tasks}
+      initialEvents={events}
+      month={month}
+    />
   )
 }
