@@ -31,6 +31,11 @@ export function LocaleSwitcher({ className }: { className?: string }) {
 
   function switchTo(nextLocale: string) {
     router.replace(pathname, { locale: nextLocale })
+    fetch("/api/me/locale", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ locale: nextLocale }),
+    }).catch(() => {})
   }
 
   return (
