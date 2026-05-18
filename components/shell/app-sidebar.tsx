@@ -20,6 +20,7 @@ import { ChevronsUpDown, KeyRound, LogOut, PanelLeft } from "lucide-react"
 import { logout } from "@/auth"
 import { useNotifications } from "@/components/notifications/use-notifications"
 import { ChangePasswordDialog } from "./change-password-dialog"
+import { LocaleSwitcher } from "@/components/locale-switcher"
 
 interface AppSidebarProps {
   user: { id: string; name: string; email: string; role: string }
@@ -124,6 +125,12 @@ export function AppSidebar({ user, collapsed, onToggleCollapse }: AppSidebarProp
       {/* Footer: user + theme */}
       <div className="border-t border-line p-2 space-y-1">
         {!collapsed && <ThemeToggle variant="row" />}
+        {!collapsed && <LocaleSwitcher className="w-full justify-start px-2 gap-2 text-[12px] font-medium text-ink-secondary hover:text-ink" />}
+        {collapsed && (
+          <div className="flex justify-center">
+            <LocaleSwitcher />
+          </div>
+        )}
 
         <DropdownMenu>
           <DropdownMenuTrigger
@@ -319,6 +326,7 @@ export function MobileSidebar({ user, open, onClose }: MobileSidebarProps) {
         </nav>
         <div className="border-t border-line p-3 space-y-2">
           <ThemeToggle variant="row" />
+          <LocaleSwitcher className="w-full justify-start px-2 gap-2 text-[13px] font-medium text-ink-secondary hover:text-ink" />
           <DropdownMenu>
             <DropdownMenuTrigger
               className={cn(
