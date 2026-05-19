@@ -13,10 +13,12 @@ import CreateRoomDialog from "./create-room-dialog"
 interface CallRoom {
   id: string
   name: string
-  type: "office" | "breakout" | "private"
+  type: "office" | "breakout" | "private" | "meeting" | "direct"
   roomName: string
   createdBy: string
   isActive: boolean
+  isPublic: boolean
+  scheduledAt: string | null
   creator: { id: string; name: string }
   _count: { participants: number }
   participants?: Array<{ user: { id: string; name: string } }>

@@ -7,7 +7,7 @@ import JitsiRoom from "@/components/calls/jitsi-room"
 interface CallRoom {
   id: string
   name: string
-  type: "office" | "breakout" | "private"
+  type: "office" | "breakout" | "private" | "meeting" | "direct"
   roomName: string
   createdBy: string
 }

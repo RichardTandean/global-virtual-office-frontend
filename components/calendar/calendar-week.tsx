@@ -34,6 +34,13 @@ export interface CalendarEvent {
   isAllDay: boolean
   color: string | null
   createdBy: string
+  callRoomId?: string | null
+  callRoom?: {
+    id: string
+    name: string
+    roomName: string
+    type: string
+  } | null
 }
 
 interface CalendarWeekProps {

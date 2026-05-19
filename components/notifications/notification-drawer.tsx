@@ -29,6 +29,7 @@ const TYPE_COLOR: Record<string, string> = {
   comment: "bg-status-assigned",
   asset_uploaded: "bg-status-ready-upload",
   call_invited: "bg-status-need-review",
+  meeting_reminder: "bg-status-purple",
   user_created: "bg-status-completed",
   user_deleted: "bg-status-danger",
   clock_in: "bg-status-completed",

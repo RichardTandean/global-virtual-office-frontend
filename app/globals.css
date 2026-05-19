@@ -42,6 +42,7 @@
   --status-completed: #10B981;
   --status-danger: #EF4444;
   --status-success: #10B981;
+  --status-purple: #9333EA;
 
   /* Radius scale */
   --r-xs: 4px;
@@ -128,6 +129,7 @@ html.light {
   --color-status-completed: var(--status-completed);
   --color-status-danger: var(--status-danger);
   --color-status-success: var(--status-success);
+  --color-status-purple: var(--status-purple);
 
   --radius-xs: var(--r-xs);
   --radius-sm: var(--r-sm);

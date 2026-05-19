@@ -20,7 +20,9 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog"
 import { toast } from "sonner"
+import { Phone } from "lucide-react"
 import type { CalendarEvent } from "./calendar-week"
+import { useRouter } from "@/i18n/navigation"
 
 interface EventDialogProps {
   open: boolean
@@ -37,6 +39,7 @@ const EVENT_TYPE_KEYS = [
 
 export function EventDialog({ open, onOpenChange, onSaved, editEvent }: EventDialogProps) {
   const t = useTranslations()
+  const router = useRouter()
   const isEdit = !!editEvent
 
   const [title, setTitle] = useState("")
@@ -140,6 +143,8 @@ export function EventDialog({ open, onOpenChange, onSaved, editEvent }: EventDia
     }
   }
 
+  const linkedCallRoom = editEvent?.callRoom
+
   return (
     <Dialog
       open={open}
@@ -160,6 +165,23 @@ export function EventDialog({ open, onOpenChange, onSaved, editEvent }: EventDia
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
+          {linkedCallRoom && (
+            <div className="rounded-lg bg-purple-50 dark:bg-purple-950 p-3 border border-purple-200 dark:border-purple-800">
+              <p className="text-xs font-medium text-purple-800 dark:text-purple-200">
+                {t("calls.scheduledFor")}: {linkedCallRoom.name}
+              </p>
+              <Button
+                size="sm"
+                className="mt-2 gap-1 w-full"
+                onClick={() => {
+                  onOpenChange(false)
+                  router.push("/dashboard/calls")
+                }}
+              >
+                <Phone className="h-3 w-3" /> {t("calls.join")}
+              </Button>
+            </div>
+          )}
           <div className="space-y-1">
             <Label className="text-xs">{t("calendar.type")}</Label>
             <Select value={type} onValueChange={(v) => setType(v as typeof type)}>
