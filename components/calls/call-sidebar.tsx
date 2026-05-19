@@ -65,7 +65,7 @@ export default function CallSidebar({ currentUser, users, onJoinRoom, activeRoom
   const office = rooms.find((r) => r.type === "office")
   const breakoutRooms = rooms.filter((r) => r.type === "breakout")
   const privateRooms = rooms.filter((r) => r.type === "private")
-  const activeCount = rooms.reduce((sum, r) => sum + (r._count?.participants || 0), 0)
+  const activeCount = rooms.reduce((sum, r) => sum + (r.participants?.length || 0), 0)
 
   return (
     <>
@@ -122,8 +122,8 @@ export default function CallSidebar({ currentUser, users, onJoinRoom, activeRoom
                     >
                       <div className="size-1.5 rounded-full bg-green-500" />
                       {office.name}
-                      {office._count.participants > 0 && (
-                        <Badge variant="secondary" className="ml-auto text-[9px] px-1 h-4">{office._count.participants}</Badge>
+                      {office.participants && office.participants.length > 0 && (
+                        <Badge variant="secondary" className="ml-auto text-[9px] px-1 h-4">{office.participants.length}</Badge>
                       )}
                     </Button>
                   )}

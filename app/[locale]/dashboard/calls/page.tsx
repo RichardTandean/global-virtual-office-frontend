@@ -260,8 +260,8 @@ export default function CallsPage() {
           <div className="flex items-center gap-3">
             <div className="size-2.5 rounded-full bg-green-500 animate-pulse" />
             <span className="text-sm font-medium">{t("calls.officeCall")}</span>
-            {office._count.participants > 0 && (
-              <Badge variant="secondary" className="text-[10px]">{t("calls.inRoom", { n: office._count.participants })}</Badge>
+            {office.participants && office.participants.length > 0 && (
+              <Badge variant="secondary" className="text-[10px]">{t("calls.inRoom", { n: office.participants.length })}</Badge>
             )}
           </div>
           <Button size="sm" variant="outline" className="gap-1" onClick={() => setActiveRoom(office)}>
@@ -322,7 +322,7 @@ function RoomRow({
         </div>
         <p className="text-[11px] text-muted-foreground">
           {cs("byUser", { name: room.creator.name })}
-          {room._count.participants > 0 && ` · ${cs("participants", { n: room._count.participants })}`}
+          {room.participants && room.participants.length > 0 && ` · ${cs("participants", { n: room.participants.length })}`}
           {room.invites && room.invites.length > 0 && ` · ${cs("invited", { n: room.invites.length })}`}
         </p>
         {scheduledTime && (
