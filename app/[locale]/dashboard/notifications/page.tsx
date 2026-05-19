@@ -24,6 +24,7 @@ import {
   useNotifications,
   type NotificationItem,
 } from "@/components/notifications/use-notifications"
+import { getNotificationRoute } from "@/components/notifications/notification-routes"
 import { cn } from "@/lib/utils"
 
 const NOTIFICATION_TYPES = [
@@ -101,9 +102,15 @@ export default function NotificationsArchivePage() {
 
   function handleClick(n: NotificationItem) {
     if (!n.isRead) markRead(n.id)
-    if (n.taskId) {
-      router.push(`/dashboard?task=${n.taskId}`)
+    const userCookie = typeof document !== "undefined"
+      ? document.cookie.match(/(?:^|;\s*)user=([^;]*)/)
+      : null
+    let role = "Editor" as "Editor" | "KoreaTeam" | "Admin"
+    if (userCookie) {
+      try { role = JSON.parse(decodeURIComponent(userCookie[1])).role } catch {}
     }
+    const route = getNotificationRoute(n, role)
+    if (route) router.push(route)
   }
 
   const nt = useTranslations("notifications.types")

@@ -7,6 +7,7 @@ import { X, CheckCheck, Inbox } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { useNotifications, NotificationItem } from "./use-notifications"
+import { getNotificationRoute } from "./notification-routes"
 import { EmptyState } from "@/components/ui/empty-state"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 
@@ -99,10 +100,16 @@ export function NotificationDrawer({ open, onClose }: NotificationDrawerProps) {
 
   function handleClick(n: NotificationItem) {
     if (!n.isRead) markRead(n.id)
-    if (n.taskId) {
-      router.push(`/dashboard/notifications?task=${n.taskId}`)
+    const userCookie = document.cookie.match(/(?:^|;\s*)user=([^;]*)/)
+    let role = "Editor" as "Editor" | "KoreaTeam" | "Admin"
+    if (userCookie) {
+      try { role = JSON.parse(decodeURIComponent(userCookie[1])).role } catch {}
     }
-    onClose()
+    const route = getNotificationRoute(n, role)
+    if (route) {
+      router.push(route)
+      onClose()
+    }
   }
 
   if (!open) return null

@@ -10,6 +10,7 @@ import {
   useState,
 } from "react"
 import { toast } from "sonner"
+import { getNotificationRoute } from "./notification-routes"
 
 export interface NotificationItem {
   id: string
@@ -17,6 +18,7 @@ export interface NotificationItem {
   title: string
   body: string
   taskId: string | null
+  bodyParams: Record<string, any> | null
   isRead: boolean
   createdAt: string
 }
@@ -132,8 +134,17 @@ export function NotificationsProvider({
               if (!seenIdsRef.current.has(it.id)) {
                 seenIdsRef.current.add(it.id)
                 if (!it.isRead) newCount += 1
+                const userCookie = typeof document !== "undefined"
+                  ? document.cookie.match(/(?:^|;\s*)user=([^;]*)/)
+                  : null
+                let role = "Editor" as "Editor" | "KoreaTeam" | "Admin"
+                if (userCookie) {
+                  try { role = JSON.parse(decodeURIComponent(userCookie[1])).role } catch {}
+                }
+                const route = getNotificationRoute(it, role)
                 toast.message(it.title, {
                   description: it.body,
+                  ...(route ? { action: { label: "View", onClick: () => window.location.assign(route) } } : {}),
                 })
               }
               map.set(it.id, it)
